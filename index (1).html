@@ -1,0 +1,2688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Vehículos · Escuela Americana de Conducción</title>
+  <style>
+    /* ===================== VARIABLES ===================== */
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1e40af;
+      --primary-light: #dbeafe;
+      --accent: #f59e0b;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --sidebar-w: 260px;
+      --header-h: 64px;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+    }
+
+    /* ===================== RESET & BASE ===================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gray-100); color: var(--gray-900); min-height: 100vh; }
+    input, select, textarea, button { font-family: inherit; font-size: inherit; }
+    a { color: var(--primary); text-decoration: none; }
+    img { max-width: 100%; }
+
+    /* ===================== LOGIN ===================== */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; background: linear-gradient(135deg, #1e3a8a 0%, #1a56db 100%);
+    }
+    .login-card {
+      background: #fff; border-radius: 16px; padding: 48px 40px;
+      width: 100%; max-width: 420px; box-shadow: 0 25px 50px rgba(0,0,0,.25);
+    }
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo h1 { font-size: 1.4rem; font-weight: 700; color: var(--primary-dark); margin-top: 12px; }
+    .login-logo p { color: var(--gray-500); font-size: .85rem; margin-top: 4px; }
+    .login-logo .car-icon { font-size: 3rem; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: .85rem; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-300);
+      border-radius: 8px; transition: border-color .15s; background: var(--gray-50);
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--primary); background: #fff;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+      transition: all .15s; font-size: .9rem; line-height: 1;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-warning { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); }
+    .btn-ghost { background: transparent; color: var(--gray-700); border: 1.5px solid var(--gray-300); }
+    .btn-ghost:hover { background: var(--gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: .82rem; }
+    .btn-block { width: 100%; justify-content: center; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ===================== APP LAYOUT ===================== */
+    #app { display: none; }
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar-w); background: #1e3a8a;
+      color: #fff; position: fixed; top: 0; left: 0;
+      height: 100vh; overflow-y: auto; z-index: 100;
+      display: flex; flex-direction: column;
+      transition: transform .3s;
+    }
+    .sidebar-header {
+      padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.1);
+      flex-shrink: 0;
+    }
+    .sidebar-header h2 { font-size: .95rem; font-weight: 700; }
+    .sidebar-header p { font-size: .75rem; color: rgba(255,255,255,.6); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-section-title {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+      color: rgba(255,255,255,.4); padding: 16px 20px 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: rgba(255,255,255,.75); cursor: pointer; border-radius: 0;
+      transition: all .15s; font-size: .9rem; position: relative;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .nav-item.active { background: rgba(255,255,255,.15); color: #fff; font-weight: 600; }
+    .nav-item.active::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: #60a5fa; border-radius: 0 2px 2px 0;
+    }
+    .nav-badge {
+      margin-left: auto; background: var(--danger); color: #fff;
+      font-size: .7rem; padding: 2px 7px; border-radius: 20px; font-weight: 700;
+    }
+    .sidebar-footer {
+      padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.1); flex-shrink: 0;
+    }
+    .user-info { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 36px; height: 36px; background: rgba(255,255,255,.2);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem; flex-shrink: 0;
+    }
+    .user-details { flex: 1; min-width: 0; }
+    .user-details .name { font-size: .85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-details .role { font-size: .72rem; color: rgba(255,255,255,.5); }
+
+    /* MAIN */
+    .main-content { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+    .topbar {
+      height: var(--header-h); background: #fff; border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; padding: 0 28px; gap: 16px;
+      position: sticky; top: 0; z-index: 50; box-shadow: var(--shadow);
+    }
+    .topbar h1 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); flex: 1; }
+    .topbar .btn-menu { display: none; background: none; border: none; cursor: pointer; font-size: 1.3rem; }
+    .page-content { padding: 28px; flex: 1; }
+
+    /* ===================== CARDS ===================== */
+    .card {
+      background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 20px; margin-bottom: 20px;
+    }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .card-title { font-size: 1rem; font-weight: 700; color: var(--gray-900); }
+    .card-subtitle { font-size: .82rem; color: var(--gray-500); margin-top: 2px; }
+
+    /* ===================== KPI CARDS ===================== */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: #fff; border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow); border-left: 4px solid var(--primary);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .stat-card.green { border-left-color: var(--success); }
+    .stat-card.yellow { border-left-color: var(--accent); }
+    .stat-card.red { border-left-color: var(--danger); }
+    .stat-card.blue { border-left-color: var(--primary); }
+    .stat-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .stat-value { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .stat-label { font-size: .78rem; color: var(--gray-500); margin-top: 2px; }
+
+    /* ===================== TABLES ===================== */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    thead th { background: var(--gray-50); color: var(--gray-700); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
+    tbody td { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    tbody tr:hover { background: var(--gray-50); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ===================== BADGES ===================== */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+      border-radius: 20px; font-size: .75rem; font-weight: 600; white-space: nowrap;
+    }
+    .badge-green { background: var(--success-light); color: var(--success); }
+    .badge-red { background: var(--danger-light); color: var(--danger); }
+    .badge-yellow { background: var(--warning-light); color: var(--warning); }
+    .badge-blue { background: var(--primary-light); color: var(--primary-dark); }
+    .badge-gray { background: var(--gray-100); color: var(--gray-700); }
+
+    /* ===================== ALERTS ===================== */
+    .alert-item {
+      display: flex; gap: 12px; padding: 12px 14px; border-radius: 8px;
+      margin-bottom: 8px; border: 1px solid transparent;
+    }
+    .alert-item.critica { background: #fff1f2; border-color: #fecdd3; }
+    .alert-item.alta { background: #fff7ed; border-color: #fed7aa; }
+    .alert-item.normal { background: #eff6ff; border-color: #bfdbfe; }
+    .alert-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .alert-titulo { font-weight: 600; font-size: .88rem; }
+    .alert-msg { font-size: .82rem; color: var(--gray-600, #4b5563); margin-top: 2px; }
+    .alert-time { font-size: .72rem; color: var(--gray-500); margin-top: 3px; }
+
+    /* ===================== MODAL ===================== */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 200; display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: #fff; border-radius: 14px; width: 100%;
+      max-width: 680px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 25px 50px rgba(0,0,0,.3);
+      transform: translateY(24px); transition: transform .2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-header {
+      padding: 20px 24px 16px; border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff;
+    }
+    .modal-title { font-size: 1.05rem; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--gray-500); line-height: 1; }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* ===================== FORM GRID ===================== */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid .col-2 { grid-column: 1 / -1; }
+    textarea { min-height: 80px; resize: vertical; }
+    .form-hint { font-size: .75rem; color: var(--gray-500); margin-top: 4px; }
+
+    /* ===================== FOTO UPLOAD ===================== */
+    .foto-zone {
+      border: 2px dashed var(--gray-300); border-radius: 10px; padding: 24px;
+      text-align: center; cursor: pointer; transition: all .15s; background: var(--gray-50);
+    }
+    .foto-zone:hover, .foto-zone.drag-over { border-color: var(--primary); background: var(--primary-light); }
+    .foto-zone p { color: var(--gray-500); font-size: .88rem; margin-top: 8px; }
+    .fotos-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .foto-thumb {
+      width: 90px; height: 70px; object-fit: cover; border-radius: 6px;
+      border: 2px solid var(--gray-200); cursor: pointer;
+    }
+
+    /* ===================== VEHICULO CARD ===================== */
+    .vehiculos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+    .vehiculo-card {
+      background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+      overflow: hidden; transition: box-shadow .15s; cursor: pointer;
+    }
+    .vehiculo-card:hover { box-shadow: var(--shadow-md); }
+    .vehiculo-foto { height: 160px; background: var(--gray-200); display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+    .vehiculo-foto img { width: 100%; height: 100%; object-fit: cover; }
+    .vehiculo-info { padding: 14px 16px; }
+    .vehiculo-placa { font-size: 1.1rem; font-weight: 800; color: var(--primary-dark); }
+    .vehiculo-nombre { font-size: .9rem; color: var(--gray-700); margin-top: 2px; }
+    .vehiculo-meta { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .vehiculo-km { font-size: .8rem; color: var(--gray-500); display: flex; align-items: center; gap: 4px; }
+
+    /* ===================== SEARCH BAR ===================== */
+    .search-bar {
+      display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-input-wrap input { width: 100%; padding: 9px 14px 9px 36px; border: 1.5px solid var(--gray-300); border-radius: 8px; background: #fff; }
+    .search-input-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-size: .9rem; }
+
+    /* ===================== PROGRESS BARS ===================== */
+    .progress-bar { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+    .progress-fill.green { background: var(--success); }
+    .progress-fill.yellow { background: var(--accent); }
+    .progress-fill.red { background: var(--danger); }
+
+    /* ===================== EMPTY STATE ===================== */
+    .empty-state {
+      text-align: center; padding: 48px 20px; color: var(--gray-500);
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: .9rem; }
+
+    /* ===================== TABS ===================== */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--gray-200); margin-bottom: 20px; }
+    .tab { padding: 10px 20px; cursor: pointer; font-size: .88rem; font-weight: 600; color: var(--gray-500); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab:hover:not(.active) { color: var(--gray-900); }
+
+    /* ===================== TOAST ===================== */
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 18px; border-radius: 10px; background: var(--gray-900); color: #fff;
+      font-size: .9rem; box-shadow: var(--shadow-md); max-width: 360px;
+      animation: slideIn .2s ease; display: flex; align-items: center; gap: 8px;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .toast.warning { background: var(--warning); }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ===================== RESPONSIVE ===================== */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .topbar .btn-menu { display: flex; }
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .page-content { padding: 16px; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .vehiculos-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===================== SPINNER ===================== */
+    .spinner {
+      display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    .spinner.dark { border-color: rgba(0,0,0,.1); border-top-color: var(--primary); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Vencimiento colors */
+    .dias-critico { color: var(--danger); font-weight: 700; }
+    .dias-alerta { color: var(--warning); font-weight: 600; }
+    .dias-ok { color: var(--success); }
+
+    /* Camera capture */
+    #camera-video { width: 100%; border-radius: 8px; display: none; }
+    #camera-canvas { display: none; }
+
+    /* Timeline uso */
+    .timeline { padding: 8px 0; }
+    .timeline-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+    .timeline-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .9rem; flex-shrink: 0; }
+    .timeline-icon.salida { background: var(--primary-light); }
+    .timeline-icon.llegada { background: var(--success-light); }
+    .timeline-content { flex: 1; }
+    .timeline-title { font-weight: 600; font-size: .88rem; }
+    .timeline-sub { font-size: .8rem; color: var(--gray-500); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ======================== LOGIN ======================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="car-icon">🚗</div>
+      <h1>Control de Vehículos</h1>
+      <p>Escuela Americana de Conducción</p>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="login-email" placeholder="correo@escuela.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <div id="login-error" style="color:var(--danger);font-size:.85rem;margin-bottom:12px;display:none;"></div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+        Ingresar al Sistema
+      </button>
+    </form>
+    <p style="text-align:center;margin-top:20px;font-size:.78rem;color:var(--gray-500);">
+      Usuario inicial: admin@escuela.com · Contraseña: Admin2024!
+    </p>
+  </div>
+</div>
+
+<!-- ======================== APP ======================== -->
+<div id="app">
+  <div class="app-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header" style="text-align:center;padding:16px 12px 10px;">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAACpCAYAAABu8HJhAACxlUlEQVR42uz9d7ylV3Xfj7/X3k857dbpvaiPBKoIkIARiI6InW8sQjDYOHZMIE78TWzHJY4NtrHjJI7zjeOCjWMb1yCwY8A2xVgaASoICfU20vRyZ+b2e095yt7798d+nlPuvTNzR2Aj+5fD63CvztxzzlP22mutz/qszxLnnAB8EOSD4ABuueUWfcv6W9TOt6K+53s+lN9+++1q48aNMjEx4QBqe/aoxz/zGXPTTTepIAjUsWPHzOk77rD0PfYVP6+//noBePDBB13/v+8tfi5ef7285l3vCobn591dd92V79vn37l371727dvH7bf/tLrx7ReFX33++ezAZz7jbrvtNv3kk0/aO+64w/Z/xu7duwXgjjvusNdff700iu/bx+Bj79693HLLLcH88LDkhw7ZX3n0UXP7+vXqwIED7sEHH3R79+5lcfEyaTSecfv27WMvcNn13y/xTbGamJhwBw4ccOVn33L7T6vPHPiM2717twy+f1EajYZbv369Wti4US4BJiYm3B3FNdq75DrtLX/2vbe8Dv1/v764D4/+yq+Y9X33ZOPGV8k993zMNhoNt/OWW4Kd7OQzn/mf5l3veldw7Ngx7r777nz37t1SXpubbvouNT4+LWzerDhxwh4CWsU15Rz37fbbb1fl791zKY65PPf+4/bv+Wn1+tdvDh5//HFTvnbPPffY/s/dy/LH+iVrbs+ePVx55QfN7bfTfZ+I2GL9lk8rIo5zPJxzctdd6FtugQcfRK6/nlxEnHNOfxDch0Rs9+9An+uzECX838f/fbwYH84hKy3+lV7/Rh5LP0xExH33u979gVMnT15OoDVKNAhKAAcWcNY555xTCpwT8W90zvb5kPLftELEWSm/TgFOxFnrdwIFoPxn+Jcs4kTAdbcKJ8o6EIG+77A453eL/uNQ/SflbPcztGj/5f44nC0+SMQppQALxm9H4sCBcm6FC7TspgBOW1EU18EhBIIzzhkjfUdr/acK6N6BdD9D/IYozuFERIpDwjmx57uJqrh+/Q9rXf/nu74bLku+ulhctvsHtnvMfd/Rf8zO9u+iy48H0H3HZK1zA9+x9H0ifmUtOVMrTnBgnHWVOLYvufrqD//8z//8SeecnM9TfLMewdIXtNYcPXr0Xxw9cuQa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" alt="Logo CEA" style="width:90px;height:auto;display:block;margin:0 auto 8px;">
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.95);text-transform:uppercase;line-height:1.3;">Control de Vehículos<br><span style="color:rgba(255,255,255,.7);font-weight:400;">Escuela Americana</span></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Principal</div>
+        <div class="nav-item active" data-page="dashboard" onclick="navegarA('dashboard')">
+          <span>📊</span> Dashboard
+          <span class="nav-badge" id="badge-alertas" style="display:none">0</span>
+        </div>
+
+        <div class="nav-section-title">Vehículos</div>
+        <div class="nav-item" data-page="vehiculos" onclick="navegarA('vehiculos')">
+          <span>🚗</span> Flota Vehicular
+        </div>
+        <div class="nav-item" data-page="uso" onclick="navegarA('uso')">
+          <span>🔑</span> Control de Uso
+        </div>
+
+        <div class="nav-section-title">Gestión</div>
+        <div class="nav-item" data-page="documentos" onclick="navegarA('documentos')">
+          <span>📋</span> Documentos y Seguros
+          <span class="nav-badge" id="badge-docs" style="display:none">0</span>
+        </div>
+        <div class="nav-item" data-page="mantenimiento" onclick="navegarA('mantenimiento')">
+          <span>🔧</span> Mantenimiento
+          <span class="nav-badge" id="badge-mant" style="display:none">0</span>
+        </div>
+
+        <div class="nav-section-title">Operaciones</div>
+        <div class="nav-item" data-page="combustible" onclick="navegarA('combustible')">
+          <span>⛽</span> Combustible
+        </div>
+        <div class="nav-item" data-page="incidentes" onclick="navegarA('incidentes')">
+          <span>⚠️</span> Incidentes
+          <span class="nav-badge" id="badge-incidentes" style="display:none">0</span>
+        </div>
+        <div class="nav-item" data-page="comparendos" onclick="navegarA('comparendos')">
+          <span>🚦</span> Comparendos
+          <span class="nav-badge" id="badge-comparendos" style="display:none">0</span>
+        </div>
+
+        <div class="nav-section-title" id="nav-admin-section">Administración</div>
+        <div class="nav-item" data-page="contabilidad" onclick="navegarA('contabilidad')" id="nav-contabilidad">
+          <span>💰</span> Contabilidad
+        </div>
+        <div class="nav-item" data-page="reportes" onclick="navegarA('reportes')" id="nav-reportes">
+          <span>📈</span> Reportes
+        </div>
+        <div class="nav-item" data-page="usuarios" onclick="navegarA('usuarios')" id="nav-usuarios">
+          <span>👥</span> Usuarios / Instructores
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">A</div>
+          <div class="user-details">
+            <div class="name" id="user-name">Administrador</div>
+            <div class="role" id="user-role">Director</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="cerrarSesion()" style="width:100%;margin-top:10px;color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2);">
+          ⏻ Cerrar Sesión
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+      <header class="topbar">
+        <button class="btn-menu" onclick="toggleSidebar()">☰</button>
+        <h1 id="page-title">Dashboard</h1>
+        <div id="topbar-actions"></div>
+      </header>
+      <main class="page-content" id="page-content">
+        <div class="empty-state"><div class="icon">⏳</div><p>Cargando...</p></div>
+      </main>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CONTAINER -->
+<div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Título</span>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN GLOBAL
+// ============================================================
+const API_BASE = '/api';
+let authToken = localStorage.getItem('auth_token');
+let usuarioActual = JSON.parse(localStorage.getItem('usuario_actual') || 'null');
+let paginaActual = 'dashboard';
+let catalogoMantenimiento = [];
+
+// ============================================================
+// API CLIENT
+// ============================================================
+async function api(endpoint, options = {}) {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...options.headers,
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  const data = await res.json();
+  if (!res.ok && res.status === 401) {
+    cerrarSesion();
+    throw new Error('Sesión expirada');
+  }
+  return data;
+}
+
+// ============================================================
+// AUTENTICACIÓN
+// ============================================================
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Ingresando...';
+  err.style.display = 'none';
+
+  const res = await api('/auth/login', {
+    method: 'POST',
+    body: { email: document.getElementById('login-email').value, password: document.getElementById('login-password').value },
+  }).catch(e => ({ ok: false, error: 'Error de conexión' }));
+
+  if (res.ok) {
+    authToken = res.data.token;
+    usuarioActual = res.data.usuario;
+    localStorage.setItem('auth_token', authToken);
+    localStorage.setItem('usuario_actual', JSON.stringify(usuarioActual));
+    iniciarApp();
+  } else {
+    err.textContent = res.error || 'Credenciales incorrectas';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Ingresar al Sistema';
+  }
+});
+
+function cerrarSesion() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('usuario_actual');
+  authToken = null;
+  usuarioActual = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+function iniciarApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Configurar info de usuario
+  document.getElementById('user-name').textContent = usuarioActual.nombre;
+  document.getElementById('user-role').textContent = usuarioActual.rol.charAt(0).toUpperCase() + usuarioActual.rol.slice(1);
+  document.getElementById('user-avatar').textContent = usuarioActual.nombre.charAt(0).toUpperCase();
+
+  // Ocultar secciones según rol
+  if (usuarioActual.rol === 'instructor') {
+    document.getElementById('nav-usuarios').style.display = 'none';
+    document.getElementById('nav-reportes').style.display = 'none';
+    document.getElementById('nav-contabilidad').style.display = 'none';
+    document.getElementById('nav-admin-section').style.display = 'none';
+  }
+
+  // Cargar catálogo de mantenimiento
+  api('/catalogo/mantenimiento').then(r => { if (r.ok) catalogoMantenimiento = r.data; });
+
+  navegarA('dashboard');
+}
+
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
+function navegarA(pagina) {
+  paginaActual = pagina;
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === pagina);
+  });
+
+  const titulos = {
+    dashboard: '📊 Dashboard',
+    vehiculos: '🚗 Flota Vehicular',
+    uso: '🔑 Control de Uso',
+    documentos: '📋 Documentos y Seguros',
+    mantenimiento: '🔧 Mantenimiento',
+    combustible: '⛽ Control de Combustible',
+    incidentes: '⚠️ Registro de Incidentes',
+    comparendos: '🚦 Comparendos',
+    contabilidad: '💰 Contabilidad — Reporte de Gastos',
+    reportes: '📈 Reportes',
+    usuarios: '👥 Usuarios / Instructores',
+  };
+  document.getElementById('page-title').textContent = titulos[pagina] || pagina;
+  document.getElementById('topbar-actions').innerHTML = '';
+
+  const paginas = {
+    dashboard: renderDashboard,
+    vehiculos: renderVehiculos,
+    uso: renderUso,
+    documentos: renderDocumentos,
+    mantenimiento: renderMantenimiento,
+    combustible: renderCombustible,
+    incidentes: renderIncidentes,
+    comparendos: renderComparendos,
+    contabilidad: renderContabilidad,
+    reportes: renderReportes,
+    usuarios: renderUsuarios,
+  };
+
+  const fn = paginas[pagina];
+  if (fn) fn();
+
+  // Cerrar sidebar en móvil
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function renderDashboard() {
+  const content = document.getElementById('page-content');
+  content.innerHTML = '<div class="empty-state"><div class="icon"><span class="spinner dark"></span></div></div>';
+
+  const res = await api('/dashboard/stats');
+  if (!res.ok) { content.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Error al cargar</p></div>'; return; }
+
+  const { resumen, alertas_recientes, vehiculos_en_uso, proximos_vencimientos } = res.data;
+
+  // Actualizar badges
+  actualizarBadge('badge-alertas', resumen.alertas_no_leidas);
+  actualizarBadge('badge-docs', resumen.docs_por_vencer);
+  actualizarBadge('badge-mant', resumen.mantenimientos_pendientes);
+
+  content.innerHTML = `
+    <!-- KPIs -->
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-icon">🚗</div>
+        <div><div class="stat-value">${resumen.total_vehiculos}</div><div class="stat-label">Total Vehículos</div></div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div><div class="stat-value">${resumen.vehiculos_activos}</div><div class="stat-label">Disponibles</div></div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-icon">🔑</div>
+        <div><div class="stat-value">${resumen.vehiculos_en_uso}</div><div class="stat-label">En Uso Ahora</div></div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">🔔</div>
+        <div><div class="stat-value">${resumen.alertas_no_leidas}</div><div class="stat-label">Alertas Activas</div></div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">📋</div>
+        <div><div class="stat-value">${resumen.docs_por_vencer}</div><div class="stat-label">Docs por Vencer</div></div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-icon">🔧</div>
+        <div><div class="stat-value">${resumen.mantenimientos_pendientes}</div><div class="stat-label">Mantenimientos</div></div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">📅</div>
+        <div><div class="stat-value">${resumen.usos_hoy}</div><div class="stat-label">Usos Hoy</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+      <!-- Alertas -->
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">🔔 Alertas Recientes</div></div>
+          ${alertas_recientes.length ? `<button class="btn btn-ghost btn-sm" onclick="marcarTodasLeidas()">Marcar leídas</button>` : ''}
+        </div>
+        ${alertas_recientes.length ? alertas_recientes.map(a => `
+          <div class="alert-item ${a.prioridad}" onclick="marcarAlertaLeida('${a.id}', this)">
+            <div class="alert-icon">${alertaIcono(a.tipo)}</div>
+            <div>
+              <div class="alert-titulo">${a.titulo}</div>
+              <div class="alert-msg">${a.mensaje}</div>
+              <div class="alert-time">${formatearFecha(a.created_at)}</div>
+            </div>
+          </div>`).join('') : '<div class="empty-state" style="padding:20px"><div class="icon">✅</div><p>Sin alertas pendientes</p></div>'}
+      </div>
+
+      <!-- Proximos vencimientos -->
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">📅 Próximos Vencimientos</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="navegarA('documentos')">Ver todos</button>
+        </div>
+        ${proximos_vencimientos.length ? `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Vehículo</th><th>Documento</th><th>Vence</th><th>Días</th></tr></thead>
+            <tbody>
+              ${proximos_vencimientos.map(d => `
+                <tr>
+                  <td><strong>${d.placa}</strong><br><small>${d.marca} ${d.modelo}</small></td>
+                  <td>${labelTipoDoc(d.tipo)}</td>
+                  <td>${formatearFechaCorta(d.fecha_vencimiento)}</td>
+                  <td><span class="${d.dias_restantes <= 7 ? 'dias-critico' : d.dias_restantes <= 15 ? 'dias-alerta' : 'dias-ok'}">${d.dias_restantes}d</span></td>
+                </tr>`).join('')}
+            </tbody>
+          </table></div>` : '<div class="empty-state" style="padding:20px"><div class="icon">✅</div><p>Sin vencimientos próximos</p></div>'}
+      </div>
+    </div>
+
+    <!-- Vehículos en uso ahora -->
+    ${vehiculos_en_uso.length ? `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔑 Vehículos en Uso Ahora (${vehiculos_en_uso.length})</div>
+        <button class="btn btn-ghost btn-sm" onclick="navegarA('uso')">Ver todos</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Placa</th><th>Vehículo</th><th>Instructor</th><th>Salida</th><th>KM Salida</th><th>Acción</th></tr></thead>
+        <tbody>
+          ${vehiculos_en_uso.map(u => `
+            <tr>
+              <td><strong>${u.placa}</strong></td>
+              <td>${u.marca} ${u.modelo}</td>
+              <td>${u.instructor_nombre}</td>
+              <td>${u.hora_salida} - ${formatearFechaCorta(u.fecha_salida)}</td>
+              <td>${u.km_salida?.toLocaleString()} km</td>
+              <td><button class="btn btn-success btn-sm" onclick="abrirLlegada('${u.id}', '${u.placa}', ${u.km_salida})">Registrar Llegada</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>` : ''}
+  `;
+
+  // Agregar botón de acción en topbar
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirSalida()">🔑 Registrar Salida</button>`;
+}
+
+// ============================================================
+// VEHÍCULOS
+// ============================================================
+async function renderVehiculos() {
+  const content = document.getElementById('page-content');
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormVehiculo()">+ Agregar Vehículo</button>`;
+
+  content.innerHTML = `
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="buscar-vehiculo" placeholder="Buscar por placa, marca o modelo..." oninput="filtrarVehiculos()">
+      </div>
+      <select id="filtro-tipo" onchange="filtrarVehiculos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+        <option value="">Todos los tipos</option>
+        <option value="automovil">Automóvil</option>
+        <option value="moto">Moto</option>
+        <option value="camion">Camión</option>
+        <option value="bus">Bus</option>
+      </select>
+      <select id="filtro-estado" onchange="filtrarVehiculos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+        <option value="">Todos los estados</option>
+        <option value="activo">Activos</option>
+        <option value="en_mantenimiento">En Mantenimiento</option>
+        <option value="inactivo">Inactivos</option>
+      </select>
+    </div>
+    <div id="vehiculos-lista" class="vehiculos-grid">
+      <div class="empty-state"><span class="spinner dark"></span></div>
+    </div>
+  `;
+
+  await cargarVehiculos();
+}
+
+let vehiculosCache = [];
+
+async function cargarVehiculos() {
+  const res = await api('/vehiculos');
+  if (!res.ok) return;
+  vehiculosCache = res.data;
+  mostrarVehiculos(vehiculosCache);
+}
+
+function filtrarVehiculos() {
+  const buscar = document.getElementById('buscar-vehiculo').value.toLowerCase();
+  const tipo = document.getElementById('filtro-tipo').value;
+  const estado = document.getElementById('filtro-estado').value;
+
+  const filtrados = vehiculosCache.filter(v => {
+    const coincideBuscar = !buscar || v.placa.toLowerCase().includes(buscar) || v.marca.toLowerCase().includes(buscar) || v.modelo.toLowerCase().includes(buscar);
+    const coincideTipo = !tipo || v.tipo === tipo;
+    const coincideEstado = !estado || v.estado === estado;
+    return coincideBuscar && coincideTipo && coincideEstado;
+  });
+  mostrarVehiculos(filtrados);
+}
+
+function mostrarVehiculos(lista) {
+  const cont = document.getElementById('vehiculos-lista');
+  if (!lista.length) {
+    cont.innerHTML = '<div class="empty-state col-2" style="grid-column:1/-1"><div class="icon">🚗</div><p>No se encontraron vehículos</p></div>';
+    return;
+  }
+  cont.innerHTML = lista.map(v => `
+    <div class="vehiculo-card" onclick="verVehiculo('${v.id}')">
+      <div class="vehiculo-foto">
+        ${v.foto_principal ? `<img src="${v.foto_principal}" alt="${v.placa}">` : tipoIcono(v.tipo)}
+      </div>
+      <div class="vehiculo-info">
+        <div class="vehiculo-placa">${v.placa}</div>
+        <div class="vehiculo-nombre">${v.marca} ${v.modelo} ${v.anio}</div>
+        <div class="vehiculo-meta">
+          <span class="badge ${estadoVehiculoBadge(v.estado)}">${labelEstadoVehiculo(v.estado)}</span>
+          <span class="badge badge-gray">${labelTipoVehiculo(v.tipo)}</span>
+        </div>
+        <div class="vehiculo-km">🛣 ${(v.kilometraje_actual || 0).toLocaleString()} km · ${v.transmision === 'automatica' ? '⚙️ Aut.' : '⚙️ Man.'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function verVehiculo(id) {
+  const res = await api(`/vehiculos/${id}`);
+  if (!res.ok) { toast('Error al cargar vehículo', 'error'); return; }
+  const v = res.data;
+
+  abrirModal(`${tipoIcono(v.tipo)} ${v.placa} — ${v.marca} ${v.modelo}`, `
+    <div class="tabs" id="vtabs">
+      <div class="tab active" onclick="activarTab('vtabs','vtab-info',this)">Información</div>
+      <div class="tab" onclick="activarTab('vtabs','vtab-docs',this)">Documentos (${v.documentos.length})</div>
+      <div class="tab" onclick="activarTab('vtabs','vtab-mant',this)">Mantenimientos (${v.mantenimientos.length})</div>
+      <div class="tab" onclick="activarTab('vtabs','vtab-usos',this)">Historial Uso</div>
+    </div>
+
+    <div id="vtab-info">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.88rem;">
+        ${infoItem('Placa', v.placa)} ${infoItem('Tipo', labelTipoVehiculo(v.tipo))}
+        ${infoItem('Marca', v.marca)} ${infoItem('Modelo', v.modelo)}
+        ${infoItem('Año', v.anio)} ${infoItem('Color', v.color || '—')}
+        ${infoItem('Transmisión', v.transmision === 'automatica' ? 'Automática' : 'Manual')}
+        ${infoItem('Combustible', v.combustible)}
+        ${infoItem('Kilometraje', (v.kilometraje_actual || 0).toLocaleString() + ' km')}
+        ${infoItem('Estado', labelEstadoVehiculo(v.estado))}
+        ${v.num_motor ? infoItem('N° Motor', v.num_motor) : ''}
+        ${v.num_chasis ? infoItem('N° Chasis', v.num_chasis) : ''}
+        ${v.cilindraje ? infoItem('Cilindraje', v.cilindraje + ' cc') : ''}
+      </div>
+      ${v.notas ? `<div style="margin-top:12px;padding:10px;background:var(--gray-50);border-radius:8px;font-size:.85rem;">${v.notas}</div>` : ''}
+    </div>
+
+    <div id="vtab-docs" style="display:none">
+      ${v.documentos.length ? renderTablaDocumentos(v.documentos) : '<div class="empty-state"><div class="icon">📋</div><p>Sin documentos registrados</p></div>'}
+      <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="cerrarModal();navegarA('documentos')">+ Agregar Documento</button>
+    </div>
+
+    <div id="vtab-mant" style="display:none">
+      ${v.mantenimientos.length ? renderTablaMant(v.mantenimientos) : '<div class="empty-state"><div class="icon">🔧</div><p>Sin mantenimientos registrados</p></div>'}
+    </div>
+
+    <div id="vtab-usos" style="display:none">
+      ${v.usos_recientes.length ? `
+        <div class="table-wrap"><table>
+          <thead><tr><th>Fecha</th><th>Instructor</th><th>KM Recorrido</th><th>Estado</th></tr></thead>
+          <tbody>
+            ${v.usos_recientes.map(u => `
+              <tr>
+                <td>${formatearFechaCorta(u.fecha_salida)}</td>
+                <td>${u.instructor_nombre}</td>
+                <td>${u.km_recorrido ? u.km_recorrido.toLocaleString() + ' km' : '—'}</td>
+                <td><span class="badge ${u.estado === 'en_uso' ? 'badge-yellow' : 'badge-green'}">${u.estado === 'en_uso' ? 'En Uso' : 'Devuelto'}</span></td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>
+      ` : '<div class="empty-state"><div class="icon">🔑</div><p>Sin historial de uso</p></div>'}
+    </div>
+  `, [
+    { label: '✏️ Editar', class: 'btn-outline', onclick: `cerrarModal();abrirFormVehiculo('${v.id}')` },
+    { label: '🔑 Registrar Salida', class: 'btn-primary', onclick: `cerrarModal();abrirSalida('${v.id}')` },
+  ]);
+}
+
+function abrirFormVehiculo(id = null) {
+  const v = id ? vehiculosCache.find(x => x.id === id) : null;
+  abrirModal(id ? 'Editar Vehículo' : 'Agregar Vehículo', `
+    <form id="form-vehiculo" class="form-grid">
+      <div class="form-group">
+        <label>Placa *</label>
+        <input name="placa" value="${v?.placa || ''}" required placeholder="ABC123" style="text-transform:uppercase">
+      </div>
+      <div class="form-group">
+        <label>Tipo *</label>
+        <select name="tipo" required>
+          <option value="">Seleccionar...</option>
+          ${['automovil','moto','camion','bus','otro'].map(t => `<option value="${t}" ${v?.tipo===t?'selected':''}>${labelTipoVehiculo(t)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Marca *</label>
+        <input name="marca" value="${v?.marca || ''}" required placeholder="Chevrolet, Yamaha...">
+      </div>
+      <div class="form-group">
+        <label>Modelo *</label>
+        <input name="modelo" value="${v?.modelo || ''}" required placeholder="Spark, FZ25...">
+      </div>
+      <div class="form-group">
+        <label>Año *</label>
+        <input name="anio" type="number" value="${v?.anio || new Date().getFullYear()}" required min="2000" max="${new Date().getFullYear()+1}">
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <input name="color" value="${v?.color || ''}">
+      </div>
+      <div class="form-group">
+        <label>Transmisión</label>
+        <select name="transmision">
+          <option value="manual" ${v?.transmision!=='automatica'?'selected':''}>Manual</option>
+          <option value="automatica" ${v?.transmision==='automatica'?'selected':''}>Automática</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Combustible</label>
+        <select name="combustible">
+          ${['gasolina','diesel','electrico','hibrido','gas'].map(c => `<option value="${c}" ${v?.combustible===c?'selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Kilometraje Actual</label>
+        <input name="kilometraje_actual" type="number" value="${v?.kilometraje_actual || 0}" min="0">
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select name="estado">
+          <option value="activo" ${v?.estado==='activo'?'selected':''}>Activo</option>
+          <option value="en_mantenimiento" ${v?.estado==='en_mantenimiento'?'selected':''}>En Mantenimiento</option>
+          <option value="inactivo" ${v?.estado==='inactivo'?'selected':''}>Inactivo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cilindraje (cc)</label>
+        <input name="cilindraje" type="number" value="${v?.cilindraje || ''}">
+      </div>
+      <div class="form-group">
+        <label>N° Motor</label>
+        <input name="num_motor" value="${v?.num_motor || ''}">
+      </div>
+      <div class="form-group">
+        <label>N° Chasis</label>
+        <input name="num_chasis" value="${v?.num_chasis || ''}">
+      </div>
+      <div class="form-group">
+        <label>N° Puertas</label>
+        <input name="num_puertas" type="number" value="${v?.num_puertas || 4}" min="1" max="6">
+      </div>
+      <div class="form-group col-2">
+        <label>Notas / Observaciones</label>
+        <textarea name="notas">${v?.notas || ''}</textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: id ? '💾 Guardar Cambios' : '✅ Agregar Vehículo', class: 'btn-primary', onclick: `guardarVehiculo('${id||''}')` }
+  ]);
+}
+
+async function guardarVehiculo(id) {
+  const form = document.getElementById('form-vehiculo');
+  const data = Object.fromEntries(new FormData(form));
+  data.placa = data.placa.toUpperCase();
+  data.anio = parseInt(data.anio);
+  data.kilometraje_actual = parseInt(data.kilometraje_actual) || 0;
+  data.cilindraje = parseInt(data.cilindraje) || null;
+  data.num_puertas = parseInt(data.num_puertas) || 4;
+
+  const res = await api(id ? `/vehiculos/${id}` : '/vehiculos', {
+    method: id ? 'PUT' : 'POST', body: data
+  });
+
+  if (res.ok) {
+    toast(id ? 'Vehículo actualizado' : 'Vehículo agregado', 'success');
+    cerrarModal();
+    await cargarVehiculos();
+  } else {
+    toast(res.error, 'error');
+  }
+}
+
+// ============================================================
+// DOCUMENTOS
+// ============================================================
+async function renderDocumentos() {
+  const content = document.getElementById('page-content');
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormDocumento()">+ Agregar Documento</button>`;
+
+  content.innerHTML = `
+    <div class="search-bar">
+      <select id="filtro-doc-tipo" onchange="cargarDocumentos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+        <option value="">Todos los documentos</option>
+        <option value="soat">SOAT</option>
+        <option value="tecnomecanica">Tecnomecánica</option>
+        <option value="seguro_todo_riesgo">Seguro Todo Riesgo</option>
+        <option value="seguro_rc">Seguro RC</option>
+        <option value="tarjeta_propiedad">Tarjeta Propiedad</option>
+        <option value="licencia_transito">Licencia de Tránsito</option>
+        <option value="revision_gases">Revisión de Gases</option>
+      </select>
+      <select id="filtro-doc-vencer" onchange="cargarDocumentos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+        <option value="">Todos</option>
+        <option value="7">Vencen en 7 días</option>
+        <option value="15">Vencen en 15 días</option>
+        <option value="30">Vencen en 30 días</option>
+        <option value="60">Vencen en 60 días</option>
+      </select>
+    </div>
+    <div class="card">
+      <div id="docs-tabla"><div class="empty-state"><span class="spinner dark"></span></div></div>
+    </div>
+  `;
+
+  await cargarDocumentos();
+}
+
+async function cargarDocumentos() {
+  const tipo = document.getElementById('filtro-doc-tipo')?.value;
+  const porVencer = document.getElementById('filtro-doc-vencer')?.value;
+
+  let url = '/documentos?';
+  if (tipo) url += `tipo=${tipo}&`;
+  if (porVencer) url += `por_vencer=${porVencer}&`;
+
+  const res = await api(url);
+  const cont = document.getElementById('docs-tabla');
+  if (!res.ok) { cont.innerHTML = '<div class="empty-state"><p>Error al cargar</p></div>'; return; }
+
+  if (!res.data.length) {
+    cont.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No hay documentos registrados</p></div>';
+    return;
+  }
+
+  cont.innerHTML = `<div class="table-wrap">${renderTablaDocumentos(res.data, true)}</div>`;
+}
+
+function renderTablaDocumentos(docs, conAcciones = false) {
+  return `<table>
+    <thead><tr><th>Vehículo</th><th>Tipo</th><th>Entidad</th><th>Vencimiento</th><th>Días</th><th>Valor</th>${conAcciones?'<th>Acciones</th>':''}</tr></thead>
+    <tbody>
+      ${docs.map(d => {
+        const diasRestantes = Math.floor((new Date(d.fecha_vencimiento) - new Date()) / 86400000);
+        const clsDias = diasRestantes < 0 ? 'dias-critico' : diasRestantes <= 7 ? 'dias-critico' : diasRestantes <= 15 ? 'dias-alerta' : 'dias-ok';
+        return `<tr>
+          <td><strong>${d.placa || '—'}</strong><br><small>${d.marca||''} ${d.modelo||''}</small></td>
+          <td>${labelTipoDoc(d.tipo)}</td>
+          <td>${d.entidad || '—'}<br><small>${d.numero_poliza || ''}</small></td>
+          <td>${formatearFechaCorta(d.fecha_vencimiento)}</td>
+          <td><span class="${clsDias}">${diasRestantes < 0 ? '🚨 Vencido' : diasRestantes + 'd'}</span></td>
+          <td>${d.valor_pago ? '$' + d.valor_pago.toLocaleString() : '—'}</td>
+          ${conAcciones ? `<td>
+            <button class="btn btn-ghost btn-sm" onclick="editarDocumento('${d.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="eliminarDocumento('${d.id}')">🗑</button>
+          </td>` : ''}
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function abrirFormDocumento(id = null) {
+  abrirModal(id ? 'Editar Documento' : 'Agregar Documento', `
+    <form id="form-doc" class="form-grid">
+      <div class="form-group col-2">
+        <label>Vehículo *</label>
+        <select name="vehiculo_id" required id="doc-vehiculo-select">
+          <option value="">Seleccionar vehículo...</option>
+          ${vehiculosCache.map(v => `<option value="${v.id}">${v.placa} — ${v.marca} ${v.modelo}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Documento *</label>
+        <select name="tipo" required>
+          <option value="soat">SOAT</option>
+          <option value="tecnomecanica">Tecnomecánica</option>
+          <option value="seguro_todo_riesgo">Seguro Todo Riesgo</option>
+          <option value="seguro_rc">Seguro Responsabilidad Civil</option>
+          <option value="tarjeta_propiedad">Tarjeta de Propiedad</option>
+          <option value="licencia_transito">Licencia de Tránsito</option>
+          <option value="revision_gases">Revisión de Gases</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nombre / Descripción *</label>
+        <input name="nombre" required placeholder="Ej: SOAT 2025">
+      </div>
+      <div class="form-group">
+        <label>Entidad / Aseguradora</label>
+        <input name="entidad" placeholder="SURA, Bolívar, AXA...">
+      </div>
+      <div class="form-group">
+        <label>Número de Póliza / Referencia</label>
+        <input name="numero_poliza" placeholder="Número de documento">
+      </div>
+      <div class="form-group">
+        <label>Fecha de Expedición</label>
+        <input name="fecha_expedicion" type="date">
+      </div>
+      <div class="form-group">
+        <label>Fecha de Vencimiento *</label>
+        <input name="fecha_vencimiento" type="date" required>
+      </div>
+      <div class="form-group">
+        <label>Valor del Pago ($)</label>
+        <input name="valor_pago" type="number" step="1000" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Alertar con (días de anticipación)</label>
+        <input name="dias_alerta" type="number" value="30" min="1" max="180">
+        <p class="form-hint">Se generará alerta X días antes del vencimiento</p>
+      </div>
+      <div class="form-group col-2">
+        <label>Notas</label>
+        <textarea name="notas" placeholder="Observaciones adicionales..."></textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '💾 Guardar', class: 'btn-primary', onclick: `guardarDocumento('${id||''}')` }
+  ]);
+}
+
+async function guardarDocumento(id) {
+  const form = document.getElementById('form-doc');
+  const data = Object.fromEntries(new FormData(form));
+  data.valor_pago = parseFloat(data.valor_pago) || null;
+  data.dias_alerta = parseInt(data.dias_alerta) || 30;
+
+  const res = await api(id ? `/documentos/${id}` : '/documentos', {
+    method: id ? 'PUT' : 'POST', body: data
+  });
+
+  if (res.ok) {
+    toast(id ? 'Documento actualizado' : 'Documento guardado', 'success');
+    cerrarModal();
+    cargarDocumentos();
+  } else {
+    toast(res.error, 'error');
+  }
+}
+
+async function eliminarDocumento(id) {
+  if (!confirm('¿Eliminar este documento?')) return;
+  const res = await api(`/documentos/${id}`, { method: 'DELETE' });
+  if (res.ok) { toast('Documento eliminado', 'success'); cargarDocumentos(); }
+  else toast(res.error, 'error');
+}
+
+// ============================================================
+// MANTENIMIENTO
+// ============================================================
+async function renderMantenimiento() {
+  const content = document.getElementById('page-content');
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormMantenimiento()">+ Programar Mantenimiento</button>`;
+
+  content.innerHTML = `
+    <div class="search-bar">
+      <select id="filtro-mant-estado" onchange="cargarMantenimientos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+        <option value="">Todos</option>
+        <option value="pendiente" selected>Pendientes</option>
+        <option value="completado">Completados</option>
+      </select>
+      <select id="filtro-mant-vehiculo" onchange="cargarMantenimientos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+        <option value="">Todos los vehículos</option>
+        ${vehiculosCache.map(v => `<option value="${v.id}">${v.placa} — ${v.marca} ${v.modelo}</option>`).join('')}
+      </select>
+    </div>
+    <div class="card">
+      <div id="mant-tabla"><div class="empty-state"><span class="spinner dark"></span></div></div>
+    </div>
+  `;
+
+  await cargarMantenimientos();
+}
+
+async function cargarMantenimientos() {
+  const estado = document.getElementById('filtro-mant-estado')?.value;
+  const vehiculoId = document.getElementById('filtro-mant-vehiculo')?.value;
+
+  let url = '/mantenimientos?';
+  if (estado) url += `estado=${estado}&`;
+  if (vehiculoId) url += `vehiculo_id=${vehiculoId}&`;
+
+  const res = await api(url);
+  const cont = document.getElementById('mant-tabla');
+  if (!res.ok) return;
+
+  if (!res.data.length) {
+    cont.innerHTML = '<div class="empty-state"><div class="icon">🔧</div><p>Sin mantenimientos en esta categoría</p></div>';
+    return;
+  }
+
+  cont.innerHTML = `<div class="table-wrap">${renderTablaMant(res.data, true)}</div>`;
+}
+
+function renderTablaMant(mantenimientos, conAcciones = false) {
+  return `<table>
+    <thead><tr><th>Vehículo</th><th>Mantenimiento</th><th>Próxima Fecha</th><th>Próximo KM</th><th>Estado</th><th>Costo</th>${conAcciones?'<th>Acciones</th>':''}</tr></thead>
+    <tbody>
+      ${mantenimientos.map(m => {
+        const diasRestantes = m.proxima_fecha ? Math.floor((new Date(m.proxima_fecha) - new Date()) / 86400000) : null;
+        return `<tr>
+          <td><strong>${m.placa||'—'}</strong><br><small>${m.marca||''} ${m.modelo||''}</small></td>
+          <td>${m.nombre}<br><small>${m.taller || ''}</small></td>
+          <td>${m.proxima_fecha ? `${formatearFechaCorta(m.proxima_fecha)} ${diasRestantes !== null ? `<span class="${diasRestantes < 0 ? 'dias-critico' : diasRestantes <= 7 ? 'dias-alerta' : 'dias-ok'}">(${diasRestantes < 0 ? 'Vencido' : diasRestantes+'d'})</span>` : ''}` : '—'}</td>
+          <td>${m.proximo_km ? m.proximo_km.toLocaleString() + ' km' : '—'}</td>
+          <td><span class="badge ${m.estado==='completado' ? 'badge-green' : m.estado==='pendiente' ? 'badge-yellow' : 'badge-gray'}">${m.estado}</span></td>
+          <td>${m.costo ? '$' + m.costo.toLocaleString() : '—'}</td>
+          ${conAcciones ? `<td>
+            ${m.estado === 'pendiente' ? `<button class="btn btn-success btn-sm" onclick="abrirCompletarMant('${m.id}','${m.nombre}')">✅ Completar</button>` : ''}
+            <button class="btn btn-danger btn-sm" onclick="eliminarMantenimiento('${m.id}')">🗑</button>
+          </td>` : ''}
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function abrirFormMantenimiento(vehiculoId = null) {
+  abrirModal('Programar Mantenimiento', `
+    <form id="form-mant" class="form-grid">
+      <div class="form-group col-2">
+        <label>Vehículo *</label>
+        <select name="vehiculo_id" required>
+          <option value="">Seleccionar vehículo...</option>
+          ${vehiculosCache.map(v => `<option value="${v.id}" ${v.id===vehiculoId?'selected':''}>${v.placa} — ${v.marca} ${v.modelo}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group col-2">
+        <label>Tipo de Mantenimiento</label>
+        <select name="catalogo_id" onchange="completarNombreMant(this)">
+          <option value="">Seleccionar del catálogo (opcional)</option>
+          ${catalogoMantenimiento.map(c => `<option value="${c.id}" data-nombre="${c.nombre}">${c.nombre}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group col-2">
+        <label>Nombre / Descripción *</label>
+        <input name="nombre" required id="mant-nombre-input" placeholder="Ej: Cambio de aceite y filtro">
+      </div>
+      <div class="form-group">
+        <label>Próxima Fecha Programada</label>
+        <input name="proxima_fecha" type="date">
+      </div>
+      <div class="form-group">
+        <label>Próximo KM</label>
+        <input name="proximo_km" type="number" placeholder="KM para próximo servicio">
+      </div>
+      <div class="form-group">
+        <label>Taller</label>
+        <input name="taller" placeholder="Nombre del taller">
+      </div>
+      <div class="form-group">
+        <label>Costo estimado ($)</label>
+        <input name="costo" type="number" step="1000">
+      </div>
+      <div class="form-group col-2">
+        <label>Notas</label>
+        <textarea name="notas" placeholder="Detalles adicionales..."></textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '💾 Programar', class: 'btn-primary', onclick: `guardarMantenimiento()` }
+  ]);
+}
+
+function completarNombreMant(sel) {
+  const nombre = sel.options[sel.selectedIndex]?.dataset.nombre || '';
+  if (nombre) document.getElementById('mant-nombre-input').value = nombre;
+}
+
+async function guardarMantenimiento() {
+  const form = document.getElementById('form-mant');
+  const data = Object.fromEntries(new FormData(form));
+  data.proximo_km = parseInt(data.proximo_km) || null;
+  data.costo = parseFloat(data.costo) || null;
+
+  const res = await api('/mantenimientos', { method: 'POST', body: data });
+  if (res.ok) { toast('Mantenimiento programado', 'success'); cerrarModal(); cargarMantenimientos(); }
+  else toast(res.error, 'error');
+}
+
+function abrirCompletarMant(id, nombre) {
+  const hoy = new Date().toISOString().split('T')[0];
+  abrirModal(`✅ Completar: ${nombre}`, `
+    <form id="form-completar-mant" class="form-grid">
+      <div class="form-group">
+        <label>Fecha Realizado *</label>
+        <input name="fecha_realizado" type="date" value="${hoy}" required>
+      </div>
+      <div class="form-group">
+        <label>Kilometraje al Realizar</label>
+        <input name="kilometraje_realizado" type="number" placeholder="KM actuales del vehículo">
+      </div>
+      <div class="form-group">
+        <label>Próxima Fecha</label>
+        <input name="proxima_fecha" type="date">
+        <p class="form-hint">Dejarlo vacío si no hay próximo programado</p>
+      </div>
+      <div class="form-group">
+        <label>Próximo KM</label>
+        <input name="proximo_km" type="number" placeholder="KM para siguiente servicio">
+      </div>
+      <div class="form-group">
+        <label>Taller / Mecánico</label>
+        <input name="taller" placeholder="Nombre del taller">
+      </div>
+      <div class="form-group">
+        <label>Mecánico</label>
+        <input name="mecanico" placeholder="Nombre del mecánico">
+      </div>
+      <div class="form-group">
+        <label>Costo Real ($)</label>
+        <input name="costo" type="number" step="1000">
+      </div>
+      <div class="form-group">
+        <label>N° Factura</label>
+        <input name="factura_numero">
+      </div>
+      <div class="form-group col-2">
+        <label>Repuestos utilizados</label>
+        <textarea name="repuestos" placeholder="Lista de repuestos..."></textarea>
+      </div>
+      <div class="form-group col-2">
+        <label>Notas</label>
+        <textarea name="notas" placeholder="Observaciones del servicio..."></textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '✅ Marcar Completado', class: 'btn-success', onclick: `completarMantenimiento('${id}')` }
+  ]);
+}
+
+async function completarMantenimiento(id) {
+  const form = document.getElementById('form-completar-mant');
+  const data = Object.fromEntries(new FormData(form));
+  data.kilometraje_realizado = parseInt(data.kilometraje_realizado) || null;
+  data.proximo_km = parseInt(data.proximo_km) || null;
+  data.costo = parseFloat(data.costo) || null;
+
+  const res = await api(`/mantenimientos/${id}/completar`, { method: 'PUT', body: data });
+  if (res.ok) { toast('Mantenimiento completado', 'success'); cerrarModal(); cargarMantenimientos(); }
+  else toast(res.error, 'error');
+}
+
+async function eliminarMantenimiento(id) {
+  if (!confirm('¿Eliminar este mantenimiento?')) return;
+  const res = await api(`/mantenimientos/${id}`, { method: 'DELETE' });
+  if (res.ok) { toast('Mantenimiento eliminado', 'success'); cargarMantenimientos(); }
+  else toast(res.error, 'error');
+}
+
+// ============================================================
+// CONTROL DE USO
+// ============================================================
+let fotosCapturadas = { salida: [], llegada: [] };
+
+async function renderUso() {
+  const content = document.getElementById('page-content');
+
+  if (usuarioActual.rol !== 'instructor') {
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirSalida()">🔑 Registrar Salida</button>`;
+  }
+
+  content.innerHTML = `
+    <div class="search-bar">
+      <select id="filtro-uso-estado" onchange="cargarUsos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+        <option value="">Todos</option>
+        <option value="en_uso">En Uso</option>
+        <option value="devuelto">Devueltos</option>
+      </select>
+      <input type="date" id="filtro-uso-fecha" onchange="cargarUsos()" style="padding:9px 14px;border:1.5px solid var(--gray-300);border-radius:8px;">
+    </div>
+    <div class="card">
+      <div id="uso-tabla"><div class="empty-state"><span class="spinner dark"></span></div></div>
+    </div>
+  `;
+
+  await cargarUsos();
+}
+
+async function cargarUsos() {
+  const estado = document.getElementById('filtro-uso-estado')?.value;
+  const fecha = document.getElementById('filtro-uso-fecha')?.value;
+
+  let url = '/uso?limit=100';
+  if (estado) url += `&estado=${estado}`;
+  if (fecha) url += `&fecha=${fecha}`;
+
+  const res = await api(url);
+  const cont = document.getElementById('uso-tabla');
+  if (!res.ok) return;
+
+  if (!res.data.length) {
+    cont.innerHTML = '<div class="empty-state"><div class="icon">🔑</div><p>No hay registros de uso en este período</p></div>';
+    return;
+  }
+
+  cont.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Vehículo</th><th>Instructor</th><th>Salida</th><th>Llegada</th><th>KM Recorrido</th><th>Estado</th><th>Acción</th></tr></thead>
+    <tbody>
+      ${res.data.map(u => `
+        <tr>
+          <td><strong>${u.placa}</strong><br><small>${u.marca} ${u.modelo}</small></td>
+          <td>${u.instructor_nombre}</td>
+          <td>${u.hora_salida} · ${formatearFechaCorta(u.fecha_salida)}<br><small>KM: ${u.km_salida?.toLocaleString()}</small></td>
+          <td>${u.fecha_llegada ? `${u.hora_llegada} · ${formatearFechaCorta(u.fecha_llegada)}<br><small>KM: ${u.km_llegada?.toLocaleString()}</small>` : '—'}</td>
+          <td>${u.km_recorrido ? u.km_recorrido.toLocaleString() + ' km' : '—'}</td>
+          <td>
+            <span class="badge ${u.estado === 'en_uso' ? 'badge-yellow' : u.danos_detectados ? 'badge-red' : 'badge-green'}">
+              ${u.estado === 'en_uso' ? '🔑 En Uso' : u.danos_detectados ? '⚠️ Con Novedad' : '✅ Devuelto'}
+            </span>
+          </td>
+          <td>
+            ${u.estado === 'en_uso' ? `<button class="btn btn-success btn-sm" onclick="abrirLlegada('${u.id}','${u.placa}',${u.km_salida})">Registrar Llegada</button>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="verDetalleUso('${u.id}')">Ver</button>
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function abrirSalida(vehiculoId = null) {
+  fotosCapturadas.salida = [];
+  const hoy = new Date().toISOString().split('T')[0];
+  const ahora = new Date().toTimeString().slice(0,5);
+
+  abrirModal('🔑 Registrar Salida de Vehículo', `
+    <form id="form-salida" class="form-grid">
+      <div class="form-group col-2">
+        <label>Vehículo *</label>
+        <select name="vehiculo_id" required>
+          <option value="">Seleccionar vehículo disponible...</option>
+          ${vehiculosCache.filter(v => v.estado === 'activo').map(v => `<option value="${v.id}" ${v.id===vehiculoId?'selected':''}>${v.placa} — ${v.marca} ${v.modelo} (${(v.kilometraje_actual||0).toLocaleString()} km)</option>`).join('')}
+        </select>
+      </div>
+      ${usuarioActual.rol !== 'instructor' ? `
+      <div class="form-group col-2">
+        <label>Instructor *</label>
+        <select name="instructor_id" id="salida-instructor">
+          <option value="">Cargando...</option>
+        </select>
+      </div>` : ''}
+      <div class="form-group">
+        <label>Fecha Salida</label>
+        <input name="fecha_salida" type="date" value="${hoy}">
+      </div>
+      <div class="form-group">
+        <label>Hora Salida</label>
+        <input name="hora_salida" type="time" value="${ahora}">
+      </div>
+      <div class="form-group col-2">
+        <label>Kilometraje al Salir *</label>
+        <input name="km_salida" type="number" required placeholder="KM actuales del odómetro" min="0">
+      </div>
+      <div class="form-group col-2">
+        <label>📷 Fotos del Vehículo al Salir</label>
+        <div class="foto-zone" onclick="document.getElementById('input-fotos-salida').click()" id="zona-fotos-salida">
+          <div>📷</div>
+          <p>Tomar o subir fotos del estado del vehículo (exterior completo)</p>
+        </div>
+        <input type="file" id="input-fotos-salida" accept="image/*" multiple capture="environment" style="display:none" onchange="previsualizarFotos(this,'salida')">
+        <div class="fotos-preview" id="preview-salida"></div>
+      </div>
+      <div class="form-group col-2">
+        <label>Observaciones</label>
+        <textarea name="observaciones_salida" placeholder="Estado del vehículo, observaciones previas..."></textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '✅ Registrar Salida', class: 'btn-primary', onclick: 'guardarSalida()' }
+  ]);
+
+  // Cargar instructores si no es instructor
+  if (usuarioActual.rol !== 'instructor') {
+    api('/usuarios').then(res => {
+      if (res.ok) {
+        const instructores = res.data.filter(u => u.rol === 'instructor' && u.activo);
+        const sel = document.getElementById('salida-instructor');
+        if (sel) sel.innerHTML = `<option value="">Seleccionar instructor...</option>` + instructores.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+      }
+    });
+  }
+}
+
+async function guardarSalida() {
+  const form = document.getElementById('form-salida');
+  const data = Object.fromEntries(new FormData(form));
+  data.km_salida = parseInt(data.km_salida);
+  data.fotos_salida = fotosCapturadas.salida;
+
+  // Si es instructor, usar su propio ID
+  if (usuarioActual.rol === 'instructor') {
+    data.instructor_id = usuarioActual.id;
+  }
+
+  const res = await api('/uso', { method: 'POST', body: data });
+  if (res.ok) {
+    toast('Salida registrada correctamente', 'success');
+    cerrarModal();
+    if (paginaActual === 'uso') cargarUsos();
+    if (paginaActual === 'dashboard') renderDashboard();
+  } else {
+    toast(res.error, 'error');
+  }
+}
+
+function abrirLlegada(usoId, placa, kmSalida) {
+  fotosCapturadas.llegada = [];
+  const ahora = new Date().toTimeString().slice(0,5);
+  const hoy = new Date().toISOString().split('T')[0];
+
+  abrirModal(`🏁 Registrar Llegada — ${placa}`, `
+    <form id="form-llegada" class="form-grid">
+      <div class="form-group">
+        <label>Fecha Llegada</label>
+        <input name="fecha_llegada" type="date" value="${hoy}">
+      </div>
+      <div class="form-group">
+        <label>Hora Llegada</label>
+        <input name="hora_llegada" type="time" value="${ahora}">
+      </div>
+      <div class="form-group col-2">
+        <label>Kilometraje al Llegar * <small style="color:var(--gray-500)">(Salida: ${kmSalida?.toLocaleString()} km)</small></label>
+        <input name="km_llegada" type="number" required min="${kmSalida}" placeholder="KM actuales del odómetro">
+        <p class="form-hint" id="km-recorrido-calc"></p>
+      </div>
+      <div class="form-group col-2">
+        <label>📷 Fotos del Vehículo al Llegar</label>
+        <p style="font-size:.8rem;color:var(--gray-500);margin-bottom:8px;">⚠️ Tomar fotos desde los mismos ángulos que al salir. La IA comparará las imágenes para detectar daños.</p>
+        <div class="foto-zone" onclick="document.getElementById('input-fotos-llegada').click()">
+          <div>📷</div>
+          <p>Tomar o subir fotos del estado actual del vehículo</p>
+        </div>
+        <input type="file" id="input-fotos-llegada" accept="image/*" multiple capture="environment" style="display:none" onchange="previsualizarFotos(this,'llegada')">
+        <div class="fotos-preview" id="preview-llegada"></div>
+      </div>
+      <div class="form-group col-2">
+        <label>Observaciones / Novedades</label>
+        <textarea name="observaciones_llegada" placeholder="¿El vehículo llegó en buen estado? ¿Alguna novedad?"></textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '✅ Registrar Llegada', class: 'btn-success', onclick: `guardarLlegada('${usoId}', ${kmSalida})` }
+  ]);
+
+  // Calcular KM recorrido en tiempo real
+  document.querySelector('[name=km_llegada]')?.addEventListener('input', (e) => {
+    const km = parseInt(e.target.value);
+    const hint = document.getElementById('km-recorrido-calc');
+    if (km && km > kmSalida) hint.textContent = `Recorrido: ${(km - kmSalida).toLocaleString()} km`;
+    else if (km && km <= kmSalida) { hint.textContent = '⚠️ El KM de llegada debe ser mayor al de salida'; hint.style.color = 'var(--danger)'; }
+  });
+}
+
+async function guardarLlegada(usoId, kmSalida) {
+  const form = document.getElementById('form-llegada');
+  const data = Object.fromEntries(new FormData(form));
+  data.km_llegada = parseInt(data.km_llegada);
+  data.fotos_llegada = fotosCapturadas.llegada;
+
+  if (data.km_llegada <= kmSalida) { toast('El KM de llegada debe ser mayor al de salida', 'error'); return; }
+
+  const btn = document.querySelector('#modal-footer .btn-success');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Procesando con IA...'; }
+
+  const res = await api(`/uso/${usoId}/llegada`, { method: 'PUT', body: data });
+  if (res.ok) {
+    let msg = 'Llegada registrada correctamente';
+    if (res.data.danos_detectados) {
+      msg = '⚠️ Llegada registrada. Se detectaron posibles daños. Revisar con el director.';
+      toast(msg, 'warning');
+    } else {
+      toast(msg, 'success');
+    }
+    cerrarModal();
+    if (paginaActual === 'uso') cargarUsos();
+    if (paginaActual === 'dashboard') renderDashboard();
+  } else {
+    toast(res.error, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Registrar Llegada'; }
+  }
+}
+
+async function verDetalleUso(id) {
+  const res = await api(`/uso/${id}`);
+  if (!res.ok) return;
+  const u = res.data;
+  const fotosSalida = JSON.parse(u.fotos_salida || '[]');
+  const fotosLlegada = JSON.parse(u.fotos_llegada || '[]');
+
+  abrirModal(`Detalle de Uso — ${u.placa}`, `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.88rem;margin-bottom:16px;">
+      ${infoItem('Vehículo', u.placa + ' ' + u.marca + ' ' + u.modelo)}
+      ${infoItem('Instructor', u.instructor_nombre)}
+      ${infoItem('Salida', u.hora_salida + ' — ' + formatearFechaCorta(u.fecha_salida))}
+      ${infoItem('Llegada', u.fecha_llegada ? u.hora_llegada + ' — ' + formatearFechaCorta(u.fecha_llegada) : 'En uso')}
+      ${infoItem('KM Salida', (u.km_salida||0).toLocaleString())}
+      ${infoItem('KM Llegada', u.km_llegada ? u.km_llegada.toLocaleString() : '—')}
+      ${infoItem('KM Recorrido', u.km_recorrido ? u.km_recorrido.toLocaleString() + ' km' : '—')}
+      ${infoItem('Estado', u.estado === 'en_uso' ? '🔑 En Uso' : u.danos_detectados ? '⚠️ Con Novedad' : '✅ Devuelto')}
+    </div>
+    ${u.observaciones_salida ? `<p style="font-size:.85rem;color:var(--gray-600);margin-bottom:8px;"><strong>Obs. Salida:</strong> ${u.observaciones_salida}</p>` : ''}
+    ${u.observaciones_llegada ? `<p style="font-size:.85rem;color:var(--gray-600);margin-bottom:8px;"><strong>Obs. Llegada:</strong> ${u.observaciones_llegada}</p>` : ''}
+    ${u.danos_detectados ? `<div class="alert-item alta" style="margin-top:8px;margin-bottom:8px;"><div class="alert-icon">⚠️</div><div><div class="alert-titulo">Daños detectados por IA</div><div class="alert-msg">${u.reporte_danos ? JSON.parse(u.reporte_danos).descripcion_breve || '' : ''}</div></div></div>` : ''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <div>
+        <h4 style="font-size:.82rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;">📷 Fotos al SALIR (${fotosSalida.length})</h4>
+        <div class="fotos-preview">${fotosSalida.map(url => `<img src="${url}" class="foto-thumb" onclick="window.open('${url}','_blank')">`).join('') || '<p style="font-size:.8rem;color:var(--gray-500)">Sin fotos</p>'}</div>
+      </div>
+      <div>
+        <h4 style="font-size:.82rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;">📷 Fotos al LLEGAR (${fotosLlegada.length})</h4>
+        <div class="fotos-preview">${fotosLlegada.map(url => `<img src="${url}" class="foto-thumb" onclick="window.open('${url}','_blank')">`).join('') || '<p style="font-size:.8rem;color:var(--gray-500)">Sin fotos</p>'}</div>
+      </div>
+    </div>
+  `, []);
+}
+
+// ============================================================
+// MANEJO DE FOTOS
+// ============================================================
+function previsualizarFotos(input, tipo) {
+  const preview = document.getElementById(`preview-${tipo}`);
+  if (!preview) return;
+
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const url = e.target.result;
+      fotosCapturadas[tipo].push(url);
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'foto-thumb';
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ============================================================
+// REPORTES
+// ============================================================
+async function renderReportes() {
+  const content = document.getElementById('page-content');
+  const hoy = new Date().toISOString().split('T')[0];
+  const hace30 = new Date(Date.now() - 30*86400000).toISOString().split('T')[0];
+
+  content.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Reportes del Sistema</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="date" id="rep-desde" value="${hace30}" style="padding:8px;border:1.5px solid var(--gray-300);border-radius:8px;font-size:.85rem;">
+          <span>a</span>
+          <input type="date" id="rep-hasta" value="${hoy}" style="padding:8px;border:1.5px solid var(--gray-300);border-radius:8px;font-size:.85rem;">
+          <button class="btn btn-primary btn-sm" onclick="cargarReportes()">Generar</button>
+        </div>
+      </div>
+      <div id="reportes-contenido"><div class="empty-state"><span class="spinner dark"></span></div></div>
+    </div>
+  `;
+
+  await cargarReportes();
+}
+
+async function cargarReportes() {
+  const desde = document.getElementById('rep-desde').value;
+  const hasta = document.getElementById('rep-hasta').value;
+  const cont = document.getElementById('reportes-contenido');
+
+  const [repUso, repMant, repDocs] = await Promise.all([
+    api(`/reportes/uso?desde=${desde}&hasta=${hasta}`),
+    api(`/reportes/mantenimiento?desde=${desde}&hasta=${hasta}`),
+    api('/reportes/documentos'),
+  ]);
+
+  const u = repUso.data;
+  const m = repMant.data;
+
+  cont.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+      <div class="stat-card blue"><div class="stat-icon">🔑</div><div><div class="stat-value">${u?.resumen?.total||0}</div><div class="stat-label">Total Usos</div></div></div>
+      <div class="stat-card green"><div class="stat-icon">🛣</div><div><div class="stat-value">${(u?.resumen?.km_total||0).toLocaleString()}</div><div class="stat-label">KM Totales</div></div></div>
+      <div class="stat-card yellow"><div class="stat-icon">🔧</div><div><div class="stat-value">${m?.completados?.total||0}</div><div class="stat-label">Mantenimientos</div></div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div>
+        <h3 style="font-size:.9rem;font-weight:700;margin-bottom:12px;">Uso por Vehículo</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Placa</th><th>Usos</th><th>KM Total</th></tr></thead>
+          <tbody>
+            ${(u?.por_vehiculo||[]).map(v => `<tr><td><strong>${v.placa}</strong><br><small>${v.marca} ${v.modelo}</small></td><td>${v.total_usos}</td><td>${(v.km_total||0).toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--gray-500)">Sin datos</td></tr>'}
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <h3 style="font-size:.9rem;font-weight:700;margin-bottom:12px;">Uso por Instructor</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Instructor</th><th>Usos</th><th>KM Total</th></tr></thead>
+          <tbody>
+            ${(u?.por_instructor||[]).map(i => `<tr><td>${i.instructor}</td><td>${i.total_usos}</td><td>${(i.km_total||0).toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--gray-500)">Sin datos</td></tr>'}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <h3 style="font-size:.9rem;font-weight:700;margin:20px 0 12px;">Estado de Documentos — Todos los Vehículos</h3>
+    ${repDocs.ok ? `<div class="table-wrap">${renderTablaDocumentos(repDocs.data)}</div>` : ''}
+  `;
+}
+
+// ============================================================
+// CONTABILIDAD — REPORTE CONSOLIDADO DE GASTOS
+// ============================================================
+let filtrosContabilidad = {
+  desde: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+  hasta: new Date().toISOString().split('T')[0],
+  categoria: 'todos',
+  vehiculo_id: ''
+};
+let datosGastos = null;
+
+async function renderContabilidad() {
+  const content = document.getElementById('page-content');
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary" onclick="exportarGastosCSV()">⬇️ Exportar CSV</button>`;
+
+  const resVeh = await api('/vehiculos');
+  const vehs = resVeh.ok ? resVeh.data : [];
+
+  content.innerHTML = `
+    <!-- Filtros -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+        <div class="form-group" style="margin:0;min-width:140px;">
+          <label style="font-size:.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;">Desde</label>
+          <input id="cont-desde" type="date" value="${filtrosContabilidad.desde}" style="margin-top:4px;">
+        </div>
+        <div class="form-group" style="margin:0;min-width:140px;">
+          <label style="font-size:.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;">Hasta</label>
+          <input id="cont-hasta" type="date" value="${filtrosContabilidad.hasta}" style="margin-top:4px;">
+        </div>
+        <div class="form-group" style="margin:0;min-width:160px;">
+          <label style="font-size:.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;">Categoría</label>
+          <select id="cont-cat" style="margin-top:4px;">
+            <option value="todos" ${filtrosContabilidad.categoria==='todos'?'selected':''}>Todos los gastos</option>
+            <option value="combustible" ${filtrosContabilidad.categoria==='combustible'?'selected':''}>⛽ Combustible</option>
+            <option value="mantenimiento" ${filtrosContabilidad.categoria==='mantenimiento'?'selected':''}>🔧 Mantenimiento</option>
+            <option value="comparendo" ${filtrosContabilidad.categoria==='comparendo'?'selected':''}>🚦 Comparendos</option>
+            <option value="incidente" ${filtrosContabilidad.categoria==='incidente'?'selected':''}>⚠️ Incidentes</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;min-width:180px;">
+          <label style="font-size:.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;">Vehículo</label>
+          <select id="cont-veh" style="margin-top:4px;">
+            <option value="">Todos los vehículos</option>
+            ${vehs.map(v => `<option value="${v.id}" ${filtrosContabilidad.vehiculo_id===v.id?'selected':''}>${v.placa} — ${v.marca} ${v.modelo}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="aplicarFiltrosContabilidad()" style="margin-top:0;">🔍 Aplicar</button>
+        <button class="btn btn-ghost" onclick="resetFiltrosContabilidad()" style="margin-top:0;">↩ Limpiar</button>
+      </div>
+    </div>
+
+    <!-- Resumen de totales -->
+    <div id="cont-totales" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;">
+      <div class="empty-state"><span class="spinner dark"></span></div>
+    </div>
+
+    <!-- Tabla de transacciones -->
+    <div class="card" id="cont-tabla">
+      <div class="empty-state"><span class="spinner dark"></span></div>
+    </div>`;
+
+  await cargarDatosContabilidad();
+}
+
+async function cargarDatosContabilidad() {
+  const params = new URLSearchParams({
+    desde: filtrosContabilidad.desde,
+    hasta: filtrosContabilidad.hasta,
+    categoria: filtrosContabilidad.categoria,
+  });
+  if (filtrosContabilidad.vehiculo_id) params.set('vehiculo_id', filtrosContabilidad.vehiculo_id);
+
+  const res = await api('/reportes/gastos?' + params);
+  if (!res.ok) {
+    document.getElementById('cont-tabla').innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Error al cargar</p></div>';
+    return;
+  }
+  datosGastos = res.data;
+  const { filas, totales } = res.data;
+
+  const catLabel = { combustible:'⛽ Combustible', mantenimiento:'🔧 Mantenimiento', comparendo:'🚦 Comparendos', incidente:'⚠️ Incidentes' };
+  const catColor = { combustible:'var(--primary)', mantenimiento:'var(--warning)', comparendo:'var(--danger)', incidente:'#9333ea' };
+
+  // Tarjetas de totales
+  document.getElementById('cont-totales').innerHTML = `
+    <div class="stat-card" style="border-top:3px solid var(--primary)">
+      <div class="stat-value">$${totales.total.toLocaleString('es-CO')}</div>
+      <div class="stat-label">Total período</div>
+      <div style="font-size:.75rem;color:var(--gray-400);margin-top:4px;">${filas.length} registros</div>
+    </div>
+    ${['combustible','mantenimiento','comparendo','incidente'].map(cat => `
+    <div class="stat-card" style="border-top:3px solid ${catColor[cat]}">
+      <div class="stat-value" style="font-size:1.1rem">$${(totales[cat]||0).toLocaleString('es-CO')}</div>
+      <div class="stat-label">${catLabel[cat]}</div>
+      <div style="font-size:.75rem;color:var(--gray-400);margin-top:4px;">${filas.filter(f=>f.categoria===cat).length} registros</div>
+    </div>`).join('')}
+  `;
+
+  // Tabla
+  const iconoCat = { combustible:'⛽', mantenimiento:'🔧', comparendo:'🚦', incidente:'⚠️' };
+  const colorBadge = { combustible:'badge-blue', mantenimiento:'badge-yellow', comparendo:'badge-red', incidente: 'badge-gray' };
+
+  document.getElementById('cont-tabla').innerHTML = filas.length === 0
+    ? '<div class="empty-state"><div class="icon">📭</div><p>Sin registros para este período</p></div>'
+    : `<div class="table-wrap"><table>
+        <thead><tr>
+          <th>Fecha</th><th>Categoría</th><th>Vehículo</th><th>Descripción</th>
+          <th>Responsable</th><th style="text-align:right">Monto</th><th>Soporte</th>
+        </tr></thead>
+        <tbody>
+          ${filas.map(f => `
+          <tr>
+            <td style="white-space:nowrap">${formatearFechaCorta(f.fecha)}</td>
+            <td><span class="badge ${colorBadge[f.categoria]}">${iconoCat[f.categoria]} ${catLabel[f.categoria]?.replace(/[⛽🔧🚦⚠️]\s*/,'') || f.categoria}</span></td>
+            <td><strong>${f.placa || '—'}</strong><br><span style="font-size:.75rem;color:var(--gray-400)">${f.vehiculo || ''}</span></td>
+            <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${f.descripcion||''}">${f.descripcion || '—'}</td>
+            <td>${f.responsable || '—'}</td>
+            <td style="text-align:right;font-weight:600;white-space:nowrap">$${(f.monto||0).toLocaleString('es-CO')}</td>
+            <td style="text-align:center">${f.tiene_soporte ? `<span style="color:var(--success)" title="Soporte disponible">✅</span>` : '<span style="color:var(--gray-300)">—</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:var(--gray-50);font-weight:700;">
+            <td colspan="5" style="text-align:right;padding:10px 16px;">TOTAL PERÍODO</td>
+            <td style="text-align:right;padding:10px 16px;font-size:1.05rem;color:var(--primary)">$${totales.total.toLocaleString('es-CO')}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table></div>`;
+}
+
+function aplicarFiltrosContabilidad() {
+  filtrosContabilidad.desde = document.getElementById('cont-desde').value;
+  filtrosContabilidad.hasta = document.getElementById('cont-hasta').value;
+  filtrosContabilidad.categoria = document.getElementById('cont-cat').value;
+  filtrosContabilidad.vehiculo_id = document.getElementById('cont-veh').value;
+  cargarDatosContabilidad();
+}
+
+function resetFiltrosContabilidad() {
+  filtrosContabilidad = {
+    desde: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    hasta: new Date().toISOString().split('T')[0],
+    categoria: 'todos',
+    vehiculo_id: ''
+  };
+  renderContabilidad();
+}
+
+function exportarGastosCSV() {
+  if (!datosGastos || !datosGastos.filas) { toast('Cargue los datos primero', 'warning'); return; }
+  const { filas, totales, desde, hasta } = datosGastos;
+  const catLabel = { combustible:'Combustible', mantenimiento:'Mantenimiento', comparendo:'Comparendo', incidente:'Incidente' };
+
+  const encabezado = ['Fecha','Categoría','Placa','Vehículo','Descripción','Responsable','Monto (COP)','Soporte'];
+  const filasCsv = filas.map(f => [
+    f.fecha || '',
+    catLabel[f.categoria] || f.categoria,
+    f.placa || '',
+    f.vehiculo || '',
+    `"${(f.descripcion || '').replace(/"/g, '""')}"`,
+    f.responsable || '',
+    f.monto || 0,
+    f.tiene_soporte ? 'Sí' : 'No'
+  ]);
+
+  filasCsv.push([]); // línea vacía
+  filasCsv.push(['', '', '', '', '', 'TOTAL PERÍODO', totales.total, '']);
+  filasCsv.push(['', '', '', '', '', 'Combustible', totales.combustible || 0, '']);
+  filasCsv.push(['', '', '', '', '', 'Mantenimiento', totales.mantenimiento || 0, '']);
+  filasCsv.push(['', '', '', '', '', 'Comparendos', totales.comparendo || 0, '']);
+  filasCsv.push(['', '', '', '', '', 'Incidentes', totales.incidente || 0, '']);
+
+  const csv = '﻿' + [encabezado, ...filasCsv].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `gastos_${desde}_${hasta}.csv`;
+  a.click();
+  toast('CSV descargado correctamente', 'success');
+}
+
+// ============================================================
+// COMBUSTIBLE
+// ============================================================
+async function renderCombustible() {
+  const content = document.getElementById('page-content');
+  if (usuarioActual.rol !== 'instructor') {
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormCombustible()">+ Registrar Carga</button>`;
+  } else {
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormCombustible()">+ Registrar mi Carga</button>`;
+  }
+
+  const params = new URLSearchParams({ limit: 100 });
+  const [res, resVeh] = await Promise.all([api('/combustible?' + params), api('/vehiculos')]);
+  if (!res.ok) { content.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Error al cargar</p></div>'; return; }
+
+  const vehiculosMap = {};
+  if (resVeh.ok) resVeh.data.forEach(v => vehiculosMap[v.id] = v);
+
+  let totalLitros = 0, totalValor = 0;
+  res.data.forEach(r => { totalLitros += r.litros || 0; totalValor += r.valor_total || 0; });
+
+  content.innerHTML = `
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-value">${res.data.length}</div><div class="stat-label">Registros</div></div>
+      <div class="stat-card"><div class="stat-value">${totalLitros.toFixed(1)} L</div><div class="stat-label">Total Litros</div></div>
+      <div class="stat-card"><div class="stat-value">$${totalValor.toLocaleString('es-CO')}</div><div class="stat-label">Total Pagado</div></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Vehículo</th><th>Instructor</th><th>Km</th><th>Litros</th><th>Valor Total</th><th>$/Litro</th><th>Estación</th><th>Factura</th></tr></thead>
+        <tbody>
+          ${res.data.length === 0 ? '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--gray-400)">Sin registros</td></tr>' :
+            res.data.map(r => `
+            <tr>
+              <td>${formatearFechaCorta(r.fecha)}</td>
+              <td>${vehiculosMap[r.vehiculo_id] ? `${vehiculosMap[r.vehiculo_id].placa} ${vehiculosMap[r.vehiculo_id].marca}` : r.vehiculo_id}</td>
+              <td>${r.instructor_nombre || '—'}</td>
+              <td>${r.km_al_tanquear ? r.km_al_tanquear.toLocaleString('es-CO') : '—'}</td>
+              <td>${r.litros} L</td>
+              <td>$${r.valor_total.toLocaleString('es-CO')}</td>
+              <td>$${r.precio_por_litro ? r.precio_por_litro.toLocaleString('es-CO',{maximumFractionDigits:0}) : '—'}</td>
+              <td>${r.estacion || '—'}</td>
+              <td style="text-align:center">${r.foto_factura ? `<a href="${r.foto_factura.startsWith('data:') ? '#' : r.foto_factura}" onclick="verFotoBase64('${r.foto_factura}');return false;" style="color:var(--primary)">📄 Ver</a>` : '—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function abrirFormCombustible() {
+  api('/vehiculos').then(resVeh => {
+    const vehs = resVeh.ok ? resVeh.data.filter(v => v.estado === 'activo') : [];
+    abrirModal('Registrar Carga de Combustible', `
+      <form id="form-combustible" class="form-grid">
+        <div class="form-group">
+          <label>Vehículo *</label>
+          <select name="vehiculo_id" required>
+            <option value="">— Seleccionar —</option>
+            ${vehs.map(v => `<option value="${v.id}">${v.placa} — ${v.marca} ${v.modelo}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha *</label>
+          <input name="fecha" type="date" value="${new Date().toISOString().split('T')[0]}" required>
+        </div>
+        <div class="form-group">
+          <label>Kilómetros al tanquear</label>
+          <input name="km_al_tanquear" type="number" min="0" placeholder="Ej: 45000">
+        </div>
+        <div class="form-group">
+          <label>Litros cargados *</label>
+          <input name="litros" type="number" step="0.01" min="0.1" required placeholder="Ej: 40.5">
+        </div>
+        <div class="form-group">
+          <label>Valor total pagado ($) *</label>
+          <input name="valor_total" type="number" min="0" required placeholder="Ej: 120000">
+        </div>
+        <div class="form-group">
+          <label>Estación / EDS</label>
+          <input name="estacion" placeholder="Nombre de la estación">
+        </div>
+        <div class="form-group">
+          <label>Ciudad</label>
+          <input name="ciudad" placeholder="Ej: Bogotá">
+        </div>
+        <div class="form-group col-2">
+          <label>📸 Foto de la factura (obligatoria)</label>
+          <input id="foto-factura-input" type="file" accept="image/*" capture="environment">
+          <canvas id="foto-factura-canvas" style="display:none;max-width:100%;margin-top:8px;border-radius:8px;"></canvas>
+        </div>
+        <div class="form-group col-2">
+          <label>Notas</label>
+          <textarea name="notas" rows="2" placeholder="Observaciones adicionales"></textarea>
+        </div>
+      </form>
+    `, [
+      { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+      { label: '💾 Guardar', class: 'btn-primary', onclick: 'guardarCombustible()' }
+    ]);
+    // Setup photo capture
+    setTimeout(() => {
+      const inp = document.getElementById('foto-factura-input');
+      if (inp) inp.addEventListener('change', e => capturarFotoCanvas(e, 'foto-factura-canvas', 'foto-factura-preview'));
+    }, 100);
+  });
+}
+
+async function guardarCombustible() {
+  const form = document.getElementById('form-combustible');
+  const data = Object.fromEntries(new FormData(form));
+  data.litros = parseFloat(data.litros);
+  data.valor_total = parseFloat(data.valor_total);
+  if (data.km_al_tanquear) data.km_al_tanquear = parseInt(data.km_al_tanquear);
+  else delete data.km_al_tanquear;
+  if (!data.estacion) delete data.estacion;
+  if (!data.ciudad) delete data.ciudad;
+  if (!data.notas) delete data.notas;
+
+  const canvas = document.getElementById('foto-factura-canvas');
+  if (canvas && canvas.style.display !== 'none') {
+    data.foto_factura = canvas.toDataURL('image/jpeg', 0.7);
+  }
+
+  if (!data.foto_factura) {
+    toast('La foto de la factura es obligatoria', 'error'); return;
+  }
+
+  const res = await api('/combustible', { method: 'POST', body: data });
+  if (res.ok) { toast('Carga registrada', 'success'); cerrarModal(); renderCombustible(); }
+  else toast(res.error, 'error');
+}
+
+function capturarFotoCanvas(event, canvasId, previewId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById(canvasId);
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function verFotoBase64(src) {
+  if (!src || !src.startsWith('data:')) return;
+  abrirModal('Foto de Factura', `<img src="${src}" style="max-width:100%;border-radius:8px;">`, [
+    { label: 'Cerrar', class: 'btn-ghost', onclick: 'cerrarModal()' }
+  ]);
+}
+
+// ============================================================
+// INCIDENTES
+// ============================================================
+async function renderIncidentes() {
+  const content = document.getElementById('page-content');
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormIncidente()">+ Registrar Incidente</button>`;
+
+  const [res, resVeh] = await Promise.all([api('/incidentes?limit=100'), api('/vehiculos')]);
+  if (!res.ok) { content.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Error al cargar</p></div>'; return; }
+
+  const vehiculosMap = {};
+  if (resVeh.ok) resVeh.data.forEach(v => vehiculosMap[v.id] = v);
+
+  const tipoLabel = { accidente:'Accidente', robo:'Robo', vandalismo:'Vandalismo', falla_mecanica:'Falla Mecánica', otro:'Otro' };
+  const estadoColor = { abierto:'badge-red', en_proceso:'badge-yellow', cerrado:'badge-green', archivado:'badge-gray' };
+
+  content.innerHTML = `
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Vehículo</th><th>Tipo</th><th>Descripción</th><th>Instructor</th><th>Costo Est.</th><th>Estado</th><th>Fotos</th><th>Acciones</th></tr></thead>
+        <tbody>
+          ${res.data.length === 0 ? '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--gray-400)">Sin incidentes registrados</td></tr>' :
+            res.data.map(inc => {
+              let fotos = [];
+              try { fotos = JSON.parse(inc.fotos || '[]'); } catch(e) {}
+              return `
+              <tr>
+                <td>${formatearFechaCorta(inc.fecha)}</td>
+                <td>${vehiculosMap[inc.vehiculo_id] ? `${vehiculosMap[inc.vehiculo_id].placa}` : '—'}</td>
+                <td><span class="badge badge-yellow">${tipoLabel[inc.tipo] || inc.tipo}</span></td>
+                <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${inc.descripcion}">${inc.descripcion}</td>
+                <td>${inc.instructor_nombre || '—'}</td>
+                <td>${inc.costo_estimado ? '$'+inc.costo_estimado.toLocaleString('es-CO') : '—'}</td>
+                <td><span class="badge ${estadoColor[inc.estado]||'badge-gray'}">${inc.estado}</span></td>
+                <td style="text-align:center">${fotos.length > 0 ? `<button class="btn btn-ghost btn-sm" onclick="verFotosIncidente(${JSON.stringify(fotos).replace(/"/g,'&quot;')})">📷 ${fotos.length}</button>` : '—'}</td>
+                <td>${usuarioActual.rol !== 'instructor' ? `<button class="btn btn-ghost btn-sm" onclick="abrirGestionIncidente(${JSON.stringify(inc).replace(/"/g,'&quot;')})">✏️ Gestionar</button>` : ''}</td>
+              </tr>`;}).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function abrirFormIncidente() {
+  api('/vehiculos').then(resVeh => {
+    const vehs = resVeh.ok ? resVeh.data : [];
+    abrirModal('Registrar Incidente / Daño', `
+      <form id="form-incidente" class="form-grid">
+        <div class="form-group">
+          <label>Vehículo *</label>
+          <select name="vehiculo_id" required>
+            <option value="">— Seleccionar —</option>
+            ${vehs.map(v => `<option value="${v.id}">${v.placa} — ${v.marca} ${v.modelo}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Incidente *</label>
+          <select name="tipo" required>
+            <option value="accidente">Accidente de tránsito</option>
+            <option value="robo">Robo / Hurto</option>
+            <option value="vandalismo">Vandalismo</option>
+            <option value="falla_mecanica">Falla Mecánica en Ruta</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha *</label>
+          <input name="fecha" type="date" value="${new Date().toISOString().split('T')[0]}" required>
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input name="hora" type="time">
+        </div>
+        <div class="form-group col-2">
+          <label>Lugar / Dirección</label>
+          <input name="lugar" placeholder="Ej: Calle 10 # 5-30, Bogotá">
+        </div>
+        <div class="form-group col-2">
+          <label>Descripción del incidente *</label>
+          <textarea name="descripcion" rows="3" required placeholder="Describe qué ocurrió con el mayor detalle posible..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Costo estimado ($)</label>
+          <input name="costo_estimado" type="number" min="0" placeholder="Estimado de reparación">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:28px;">
+          <input name="reclamacion_seguro" type="checkbox" id="chk-seguro" value="1" style="width:auto">
+          <label for="chk-seguro" style="margin:0">Aplica reclamación al seguro</label>
+        </div>
+        <div class="form-group col-2">
+          <label>📷 Fotos del incidente (hasta 5)</label>
+          <input id="fotos-incidente-input" type="file" accept="image/*" multiple>
+          <div id="fotos-incidente-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+        </div>
+        <div class="form-group col-2">
+          <label>Notas adicionales</label>
+          <textarea name="notas" rows="2" placeholder="Testigos, autoridades contactadas, etc."></textarea>
+        </div>
+      </form>
+    `, [
+      { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+      { label: '💾 Guardar', class: 'btn-primary', onclick: 'guardarIncidente()' }
+    ]);
+    setTimeout(() => {
+      const inp = document.getElementById('fotos-incidente-input');
+      if (inp) inp.addEventListener('change', e => previewFotosMultiples(e, 'fotos-incidente-preview'));
+    }, 100);
+  });
+}
+
+function previewFotosMultiples(event, previewId) {
+  const preview = document.getElementById(previewId);
+  if (!preview) return;
+  preview.innerHTML = '';
+  const files = Array.from(event.target.files).slice(0, 5);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.cssText = 'width:80px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;';
+      img.onclick = () => verFotoBase64(e.target.result);
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function guardarIncidente() {
+  const form = document.getElementById('form-incidente');
+  const data = Object.fromEntries(new FormData(form));
+  if (data.costo_estimado) data.costo_estimado = parseFloat(data.costo_estimado); else delete data.costo_estimado;
+  data.reclamacion_seguro = !!document.getElementById('chk-seguro').checked;
+  if (!data.hora) delete data.hora;
+  if (!data.lugar) delete data.lugar;
+  if (!data.notas) delete data.notas;
+
+  // Collect preview images as base64
+  const imgs = document.querySelectorAll('#fotos-incidente-preview img');
+  if (imgs.length > 0) {
+    data.fotos = Array.from(imgs).map(img => img.src);
+  }
+
+  const res = await api('/incidentes', { method: 'POST', body: data });
+  if (res.ok) { toast('Incidente registrado', 'success'); cerrarModal(); renderIncidentes(); }
+  else toast(res.error, 'error');
+}
+
+function verFotosIncidente(fotos) {
+  const html = fotos.map((f,i) => `<img src="${f}" style="max-width:100%;border-radius:8px;margin-bottom:8px;" onclick="this.requestFullscreen&&this.requestFullscreen()">`).join('');
+  abrirModal(`📷 Fotos del Incidente (${fotos.length})`, html, [
+    { label: 'Cerrar', class: 'btn-ghost', onclick: 'cerrarModal()' }
+  ]);
+}
+
+function abrirGestionIncidente(inc) {
+  abrirModal('Gestionar Incidente', `
+    <form id="form-gestionar-inc" class="form-grid">
+      <div class="form-group col-2">
+        <label style="font-size:.8rem;color:var(--gray-500)">Descripción original</label>
+        <p style="background:var(--gray-50);padding:10px;border-radius:8px;font-size:.85rem;">${inc.descripcion}</p>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select name="estado">
+          <option value="abierto" ${inc.estado==='abierto'?'selected':''}>Abierto</option>
+          <option value="en_proceso" ${inc.estado==='en_proceso'?'selected':''}>En Proceso</option>
+          <option value="cerrado" ${inc.estado==='cerrado'?'selected':''}>Cerrado</option>
+          <option value="archivado" ${inc.estado==='archivado'?'selected':''}>Archivado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Costo real ($)</label>
+        <input name="costo_estimado" type="number" min="0" value="${inc.costo_estimado||''}">
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:28px;">
+        <input name="reclamacion_seguro" type="checkbox" id="chk-seguro-edit" value="1" ${inc.reclamacion_seguro?'checked':''} style="width:auto">
+        <label for="chk-seguro-edit" style="margin:0">Reclamación al seguro</label>
+      </div>
+      <div class="form-group col-2">
+        <label>Notas de gestión</label>
+        <textarea name="notas" rows="3" placeholder="Acciones tomadas, resolución...">${inc.notas||''}</textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '💾 Actualizar', class: 'btn-primary', onclick: `actualizarIncidente('${inc.id}')` }
+  ]);
+}
+
+async function actualizarIncidente(id) {
+  const form = document.getElementById('form-gestionar-inc');
+  const data = Object.fromEntries(new FormData(form));
+  if (data.costo_estimado) data.costo_estimado = parseFloat(data.costo_estimado); else delete data.costo_estimado;
+  data.reclamacion_seguro = !!document.getElementById('chk-seguro-edit').checked;
+  const res = await api(`/incidentes/${id}`, { method: 'PUT', body: data });
+  if (res.ok) { toast('Incidente actualizado', 'success'); cerrarModal(); renderIncidentes(); }
+  else toast(res.error, 'error');
+}
+
+// ============================================================
+// COMPARENDOS
+// ============================================================
+async function renderComparendos() {
+  const content = document.getElementById('page-content');
+  if (usuarioActual.rol !== 'instructor') {
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormComparendo()">+ Registrar Comparendo</button>`;
+  }
+
+  const [res, resVeh, resInst] = await Promise.all([
+    api('/comparendos?limit=100'), api('/vehiculos'),
+    usuarioActual.rol !== 'instructor' ? api('/usuarios') : Promise.resolve({ ok: false })
+  ]);
+  if (!res.ok) { content.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Error al cargar</p></div>'; return; }
+
+  const vehiculosMap = {};
+  if (resVeh.ok) resVeh.data.forEach(v => vehiculosMap[v.id] = v);
+  const instructoresMap = {};
+  if (resInst.ok) resInst.data.filter(u => u.rol === 'instructor').forEach(u => instructoresMap[u.id] = u);
+
+  const estadoColor = { pendiente:'badge-red', pagado:'badge-green', en_tramite:'badge-yellow', prescrito:'badge-gray' };
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  let totalPendiente = 0;
+  res.data.filter(c => c.estado === 'pendiente').forEach(c => totalPendiente += c.valor || 0);
+
+  content.innerHTML = `
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-value">${res.data.length}</div><div class="stat-label">Total Comparendos</div></div>
+      <div class="stat-card"><div class="stat-value">${res.data.filter(c=>c.estado==='pendiente').length}</div><div class="stat-label">Pendientes</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--danger)">$${totalPendiente.toLocaleString('es-CO')}</div><div class="stat-label">Valor Pendiente</div></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Placa</th><th>Tipo Infracción</th><th>Valor</th><th>Desc. P. Pago</th><th>Vence Pago</th><th>Estado</th><th>Instructor</th>${usuarioActual.rol !== 'instructor'?'<th>Acciones</th>':''}</tr></thead>
+        <tbody>
+          ${res.data.length === 0 ? `<tr><td colspan="${usuarioActual.rol!=='instructor'?9:8}" style="text-align:center;padding:40px;color:var(--gray-400)">Sin comparendos registrados</td></tr>` :
+            res.data.map(c => {
+              let fechaBadge = '—';
+              if (c.fecha_limite_pago) {
+                const fl = new Date(c.fecha_limite_pago + 'T00:00:00');
+                const dias = Math.round((fl - hoy) / 86400000);
+                const color = c.estado==='pagado' ? 'badge-green' : dias < 0 ? 'badge-red' : dias <= 10 ? 'badge-yellow' : 'badge-gray';
+                fechaBadge = `<span class="badge ${color}">${formatearFechaCorta(c.fecha_limite_pago)}${c.estado!=='pagado' && dias <= 10 ? ' ('+dias+'d)' : ''}</span>`;
+              }
+              return `
+              <tr>
+                <td>${formatearFechaCorta(c.fecha_infraccion)}</td>
+                <td><strong>${c.placa}</strong></td>
+                <td>${c.tipo_infraccion}</td>
+                <td>$${c.valor ? c.valor.toLocaleString('es-CO') : '—'}</td>
+                <td>${c.descuento_pronto_pago ? '$'+c.descuento_pronto_pago.toLocaleString('es-CO') : '—'}</td>
+                <td>${fechaBadge}</td>
+                <td><span class="badge ${estadoColor[c.estado]||'badge-gray'}">${c.estado}</span></td>
+                <td>${c.instructor_nombre || instructoresMap[c.instructor_id]?.nombre || '—'}</td>
+                ${usuarioActual.rol !== 'instructor' ? `<td><button class="btn btn-ghost btn-sm" onclick="abrirGestionComparendo(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️ Editar</button></td>` : ''}
+              </tr>`;}).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function abrirFormComparendo() {
+  Promise.all([api('/vehiculos'), api('/usuarios')]).then(([resVeh, resInst]) => {
+    const vehs = resVeh.ok ? resVeh.data : [];
+    const instructores = resInst.ok ? resInst.data.filter(u => u.rol === 'instructor' && u.activo) : [];
+    abrirModal('Registrar Comparendo', `
+      <form id="form-comparendo" class="form-grid">
+        <div class="form-group">
+          <label>Vehículo *</label>
+          <select name="vehiculo_id" required onchange="autocompletarPlaca(this)">
+            <option value="">— Seleccionar —</option>
+            ${vehs.map(v => `<option value="${v.id}" data-placa="${v.placa}">${v.placa} — ${v.marca} ${v.modelo}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Placa (confirmación) *</label>
+          <input name="placa" id="campo-placa" required placeholder="Se autocompleta al seleccionar vehículo">
+        </div>
+        <div class="form-group col-2">
+          <label>Número de Comparendo</label>
+          <input name="numero_comparendo" placeholder="Ej: 3200000000001">
+        </div>
+        <div class="form-group">
+          <label>Fecha de Infracción *</label>
+          <input name="fecha_infraccion" type="date" required>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Infracción *</label>
+          <select name="tipo_infraccion" required>
+            <option value="">— Seleccionar —</option>
+            <option>C02 - Exceso de velocidad</option>
+            <option>C03 - No respetar semáforo</option>
+            <option>C04 - No usar cinturón</option>
+            <option>C06 - Conducir con el celular</option>
+            <option>C08 - No respetar señales</option>
+            <option>C30 - Conducción peligrosa</option>
+            <option>D02 - Documentos vencidos</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group col-2">
+          <label>Descripción</label>
+          <input name="descripcion" placeholder="Descripción adicional de la infracción">
+        </div>
+        <div class="form-group">
+          <label>Valor del Comparendo ($) *</label>
+          <input name="valor" type="number" min="0" required placeholder="Ej: 750000">
+        </div>
+        <div class="form-group">
+          <label>Descuento pronto pago ($)</label>
+          <input name="descuento_pronto_pago" type="number" min="0" placeholder="Ej: 375000">
+        </div>
+        <div class="form-group">
+          <label>Fecha límite de pago</label>
+          <input name="fecha_limite_pago" type="date">
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select name="estado">
+            <option value="pendiente">Pendiente</option>
+            <option value="en_tramite">En Trámite</option>
+            <option value="pagado">Pagado</option>
+            <option value="prescrito">Prescrito</option>
+          </select>
+        </div>
+        <div class="form-group col-2">
+          <label>Instructor responsable</label>
+          <select name="instructor_id">
+            <option value="">— No asignado —</option>
+            ${instructores.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group col-2">
+          <label>Notas</label>
+          <textarea name="notas" rows="2" placeholder="Observaciones, reclamaciones, etc."></textarea>
+        </div>
+      </form>
+    `, [
+      { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+      { label: '💾 Guardar', class: 'btn-primary', onclick: 'guardarComparendo()' }
+    ]);
+  });
+}
+
+function autocompletarPlaca(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const campo = document.getElementById('campo-placa');
+  if (campo && opt) campo.value = opt.dataset.placa || '';
+}
+
+async function guardarComparendo() {
+  const form = document.getElementById('form-comparendo');
+  const data = Object.fromEntries(new FormData(form));
+  if (data.valor) data.valor = parseFloat(data.valor); else delete data.valor;
+  if (data.descuento_pronto_pago) data.descuento_pronto_pago = parseFloat(data.descuento_pronto_pago); else delete data.descuento_pronto_pago;
+  if (!data.numero_comparendo) delete data.numero_comparendo;
+  if (!data.descripcion) delete data.descripcion;
+  if (!data.fecha_limite_pago) delete data.fecha_limite_pago;
+  if (!data.instructor_id) delete data.instructor_id;
+  if (!data.notas) delete data.notas;
+
+  const res = await api('/comparendos', { method: 'POST', body: data });
+  if (res.ok) { toast('Comparendo registrado', 'success'); cerrarModal(); renderComparendos(); }
+  else toast(res.error, 'error');
+}
+
+function abrirGestionComparendo(comp) {
+  abrirModal('Editar Comparendo', `
+    <form id="form-editar-comp" class="form-grid">
+      <div class="form-group col-2" style="background:var(--gray-50);padding:10px;border-radius:8px;font-size:.85rem;">
+        <strong>${comp.placa}</strong> — ${comp.tipo_infraccion}<br>
+        <span style="color:var(--gray-500)">Fecha infracción: ${formatearFechaCorta(comp.fecha_infraccion)}</span>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select name="estado">
+          <option value="pendiente" ${comp.estado==='pendiente'?'selected':''}>Pendiente</option>
+          <option value="en_tramite" ${comp.estado==='en_tramite'?'selected':''}>En Trámite</option>
+          <option value="pagado" ${comp.estado==='pagado'?'selected':''}>Pagado</option>
+          <option value="prescrito" ${comp.estado==='prescrito'?'selected':''}>Prescrito</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Valor ($)</label>
+        <input name="valor" type="number" min="0" value="${comp.valor||''}">
+      </div>
+      <div class="form-group">
+        <label>Fecha límite de pago</label>
+        <input name="fecha_limite_pago" type="date" value="${comp.fecha_limite_pago||''}">
+      </div>
+      <div class="form-group col-2">
+        <label>Notas</label>
+        <textarea name="notas" rows="3">${comp.notas||''}</textarea>
+      </div>
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '💾 Actualizar', class: 'btn-primary', onclick: `actualizarComparendo('${comp.id}')` }
+  ]);
+}
+
+async function actualizarComparendo(id) {
+  const form = document.getElementById('form-editar-comp');
+  const data = Object.fromEntries(new FormData(form));
+  if (data.valor) data.valor = parseFloat(data.valor); else delete data.valor;
+  if (!data.fecha_limite_pago) delete data.fecha_limite_pago;
+  if (!data.notas) delete data.notas;
+
+  const res = await api(`/comparendos/${id}`, { method: 'PUT', body: data });
+  if (res.ok) { toast('Comparendo actualizado', 'success'); cerrarModal(); renderComparendos(); }
+  else toast(res.error, 'error');
+}
+
+// ============================================================
+// USUARIOS
+// ============================================================
+async function renderUsuarios() {
+  const content = document.getElementById('page-content');
+  document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="abrirFormUsuario()">+ Agregar Usuario</button>`;
+
+  const res = await api('/usuarios');
+  if (!res.ok) return;
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  content.innerHTML = `
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Teléfono</th><th>Categoría Lic.</th><th>Venc. Licencia</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          ${res.data.map(u => {
+            let licBadge = '—';
+            if (u.licencia_vencimiento) {
+              const venc = new Date(u.licencia_vencimiento + 'T00:00:00');
+              const dias = Math.round((venc - hoy) / 86400000);
+              const color = dias < 0 ? 'badge-red' : dias <= 30 ? 'badge-yellow' : 'badge-green';
+              const label = dias < 0 ? `⛔ Vencida (${Math.abs(dias)}d)` : dias <= 30 ? `⚠️ ${dias}d` : formatearFechaCorta(u.licencia_vencimiento);
+              licBadge = `<span class="badge ${color}">${label}</span>`;
+            }
+            return `
+            <tr>
+              <td>${u.nombre}</td>
+              <td>${u.email}</td>
+              <td><span class="badge ${u.rol==='director'?'badge-blue':u.rol==='administrador'?'badge-yellow':'badge-gray'}">${u.rol}</span></td>
+              <td>${u.telefono || '—'}</td>
+              <td>${u.licencia_categoria || '—'}</td>
+              <td>${licBadge}</td>
+              <td><span class="badge ${u.activo ? 'badge-green' : 'badge-red'}">${u.activo ? 'Activo' : 'Inactivo'}</span></td>
+              <td>
+                <button class="btn btn-ghost btn-sm" onclick="abrirFormUsuario(${JSON.stringify(u).replace(/"/g,'&quot;')})">✏️ Editar</button>
+              </td>
+            </tr>`;}).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `;
+}
+
+function abrirFormUsuario(usuario = null) {
+  abrirModal(usuario ? 'Editar Usuario' : 'Nuevo Usuario', `
+    <form id="form-usuario" class="form-grid">
+      <div class="form-group col-2">
+        <label>Nombre Completo *</label>
+        <input name="nombre" value="${usuario?.nombre||''}" required>
+      </div>
+      <div class="form-group">
+        <label>Correo Electrónico *</label>
+        <input name="email" type="email" value="${usuario?.email||''}" required>
+      </div>
+      <div class="form-group">
+        <label>Rol *</label>
+        <select name="rol" required>
+          <option value="instructor" ${usuario?.rol==='instructor'?'selected':''}>Instructor</option>
+          <option value="administrador" ${usuario?.rol==='administrador'?'selected':''}>Administrador</option>
+          <option value="director" ${usuario?.rol==='director'?'selected':''}>Director</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>${usuario ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}</label>
+        <input name="password" type="password" ${!usuario?'required':''} placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input name="telefono" value="${usuario?.telefono||''}">
+      </div>
+      <div class="form-group">
+        <label>Categoría de Licencia</label>
+        <select name="licencia_categoria">
+          <option value="">— Sin licencia —</option>
+          ${['A1','A2','B1','B2','B3','C1','C2','C3'].map(c => `<option value="${c}" ${usuario?.licencia_categoria===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Vencimiento de Licencia</label>
+        <input name="licencia_vencimiento" type="date" value="${usuario?.licencia_vencimiento||''}">
+      </div>
+      ${usuario ? `
+      <div class="form-group">
+        <label>Estado</label>
+        <select name="activo">
+          <option value="1" ${usuario?.activo?'selected':''}>Activo</option>
+          <option value="0" ${!usuario?.activo?'selected':''}>Inactivo</option>
+        </select>
+      </div>` : ''}
+    </form>
+  `, [
+    { label: 'Cancelar', class: 'btn-ghost', onclick: 'cerrarModal()' },
+    { label: '💾 Guardar', class: 'btn-primary', onclick: `guardarUsuario('${usuario?.id||''}')` }
+  ]);
+}
+
+async function guardarUsuario(id) {
+  const form = document.getElementById('form-usuario');
+  const data = Object.fromEntries(new FormData(form));
+  if (data.activo !== undefined) data.activo = data.activo === '1';
+  if (!data.password) delete data.password;
+  if (!data.licencia_categoria) delete data.licencia_categoria;
+  if (!data.licencia_vencimiento) delete data.licencia_vencimiento;
+
+  const res = await api(id ? `/usuarios/${id}` : '/usuarios', {
+    method: id ? 'PUT' : 'POST', body: data
+  });
+
+  if (res.ok) { toast('Usuario guardado', 'success'); cerrarModal(); renderUsuarios(); }
+  else toast(res.error, 'error');
+}
+
+// ============================================================
+// UTILIDADES UI
+// ============================================================
+function abrirModal(titulo, cuerpo, botones = []) {
+  document.getElementById('modal-title').textContent = titulo;
+  document.getElementById('modal-body').innerHTML = cuerpo;
+  document.getElementById('modal-footer').innerHTML = botones.map(b =>
+    `<button class="btn ${b.class}" onclick="${b.onclick}">${b.label}</button>`
+  ).join('');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function cerrarModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function toast(msg, tipo = 'info') {
+  const cont = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${tipo}`;
+  el.innerHTML = `${tipo==='success'?'✅':tipo==='error'?'❌':tipo==='warning'?'⚠️':'ℹ️'} ${msg}`;
+  cont.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function activarTab(contenedorTabs, tabActiva, clickedTab) {
+  const tabs = document.querySelectorAll(`#${contenedorTabs} .tab`);
+  tabs.forEach(t => t.classList.remove('active'));
+  clickedTab.classList.add('active');
+  const paneles = document.querySelectorAll(`#${contenedorTabs} ~ div`);
+  paneles.forEach(p => p.style.display = 'none');
+  document.getElementById(tabActiva).style.display = 'block';
+}
+
+function actualizarBadge(id, count) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = count;
+  el.style.display = count > 0 ? 'inline-flex' : 'none';
+}
+
+async function marcarAlertaLeida(id, el) {
+  await api(`/alertas/${id}/leer`, { method: 'PUT' });
+  el.style.opacity = '.5';
+}
+
+async function marcarTodasLeidas() {
+  await api('/alertas/leer-todas', { method: 'PUT' });
+  renderDashboard();
+  toast('Todas las alertas marcadas como leídas', 'success');
+}
+
+function infoItem(label, value) {
+  return `<div><div style="font-size:.72rem;color:var(--gray-500);text-transform:uppercase;font-weight:600;letter-spacing:.05em;">${label}</div><div style="margin-top:2px;font-weight:500;">${value}</div></div>`;
+}
+
+// ============================================================
+// ETIQUETAS Y HELPERS
+// ============================================================
+function labelTipoVehiculo(tipo) {
+  return { automovil:'Automóvil', moto:'Moto', camion:'Camión', bus:'Bus', otro:'Otro' }[tipo] || tipo;
+}
+function labelEstadoVehiculo(estado) {
+  return { activo:'Activo', en_mantenimiento:'En Mantenimiento', inactivo:'Inactivo', baja:'Baja' }[estado] || estado;
+}
+function estadoVehiculoBadge(estado) {
+  return { activo:'badge-green', en_mantenimiento:'badge-yellow', inactivo:'badge-gray', baja:'badge-red' }[estado] || 'badge-gray';
+}
+function labelTipoDoc(tipo) {
+  return { soat:'SOAT', tecnomecanica:'Tecnomecánica', seguro_todo_riesgo:'Seg. Todo Riesgo', seguro_rc:'Seg. RC', tarjeta_propiedad:'T. Propiedad', licencia_transito:'Lic. Tránsito', revision_gases:'Rev. Gases', otro:'Otro' }[tipo] || tipo;
+}
+function tipoIcono(tipo) {
+  return { automovil:'🚗', moto:'🏍', camion:'🚛', bus:'🚌', otro:'🚙' }[tipo] || '🚗';
+}
+function alertaIcono(tipo) {
+  return { documento_vencimiento:'📋', mantenimiento_vencido:'🔧', dano_detectado:'⚠️', vehiculo_inactivo:'🚫', kilometraje:'🛣' }[tipo] || '🔔';
+}
+function formatearFecha(fecha) {
+  if (!fecha) return '—';
+  return new Date(fecha).toLocaleString('es-CO', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function formatearFechaCorta(fecha) {
+  if (!fecha) return '—';
+  const [y,m,d] = fecha.split('T')[0].split('-');
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+}
+
+// ============================================================
+// ARRANQUE
+// ============================================================
+if (authToken && usuarioActual) {
+  iniciarApp();
+}
+</script>
+</body>
+</html>

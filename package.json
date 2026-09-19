@@ -1,16 +1,1 @@
-{
-  "name": "escuela-conduccion-control-vehiculos",
-  "version": "1.0.0",
-  "description": "Sistema de control de vehículos para Escuela Americana de Conducción",
-  "scripts": {
-    "dev": "wrangler pages dev public --d1=DB --r2=FOTOS",
-    "deploy": "wrangler pages deploy public",
-    "db:create": "wrangler d1 create escuela_conduccion_db",
-    "db:migrate": "wrangler d1 migrations apply escuela_conduccion_db",
-    "db:migrate:local": "wrangler d1 migrations apply escuela_conduccion_db --local",
-    "r2:create": "wrangler r2 bucket create escuela-conduccion-fotos"
-  },
-  "devDependencies": {
-    "wrangler": "^3.45.0"
-  }
-}
+{}

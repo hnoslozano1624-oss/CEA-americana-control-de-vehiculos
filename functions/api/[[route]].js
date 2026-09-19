@@ -1302,7 +1302,7 @@ async function handleGetCombustible(env, url, usuario) {
   } else if (instructorId) {
     query += ' AND c.instructor_id = ?'; bindings.push(instructorId);
   }
-  if (vehiculoId) { query += ' ANC c.vehiculo_id = ?'; bindings.push(vehiculoId); }
+  if (vehiculoId) { query += ' AND c.vehiculo_id = ?'; bindings.push(vehiculoId); }
   if (desde) { query += ' AND c.fecha >= ?'; bindings.push(desde); }
   if (hasta) { query += ' AND c.fecha <= ?'; bindings.push(hasta); }
   query += ' ORDER BY c.fecha DESC, c.created_at DESC LIMIT ?';

@@ -857,7 +857,7 @@ async function analizarDanosConIA(env, fotosSalida, fotosLlegada) {
     Analiza si hay diferencias significativas que indiquen daños nuevos.
     Responde en JSON: {"danos_detectados": boolean, "descripcion_breve": string, "detalles": string, "confianza": number}`;
 
-    const response = await env.AI.run('@cf/meta/llama-3.8b-instruct', {
+    const response = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
       prompt,
       max_tokens: 256,
     });

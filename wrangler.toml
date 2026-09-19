@@ -1,0 +1,20 @@
+name = "cea-americana-control-vehiculos"
+main = "worker.js"
+compatibility_date = "2024-01-15"
+
+[assets]
+directory = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "escuela_conduccion_db"
+database_id = "aeacf8ed-04bd-40f1-853e-c40fc7836e54"
+
+[ai]
+binding = "AI"
+
+[vars]
+JWT_SECRET = "K9mP2xQvR7nL4wT8jA5sE3hU6yC1bF0d"
+APP_NAME = "Control Vehículos - Escuela Americana"
+DIAS_ALERTA_DOCUMENTOS = "30"
+DIAS_ALERTA_MANTENIMIENTO = "15"

@@ -35,6 +35,15 @@
  *  POST   /api/vehiculos/:id/comparar-fotos
  *  GET    /api/reportes/uso
  *  GET    /api/reportes/mantenimiento
+ *  GET    /api/combustible
+ *  POST   /api/combustible
+ *  GET    /api/combustible/:id
+ *  GET    /api/incidentes
+ *  POST   /api/incidentes
+ *  PUT    /api/incidentes/:id
+ *  GET    /api/comparendos
+ *  POST   /api/comparendos
+ *  PUT    /api/comparendos/:id
  */
 
 // ============================================================
@@ -250,12 +259,43 @@ export async function onRequest(context) {
     if (segments[1] === 'uso' && method === 'GET') return handleReporteUso(env, url);
     if (segments[1] === 'mantenimiento' && method === 'GET') return handleReporteMantenimiento(env, url);
     if (segments[1] === 'documentos' && method === 'GET') return handleReporteDocumentos(env, url);
+    if (segments[1] === 'gastos' && method === 'GET') return handleReporteGastos(env, url, usuario);
   }
 
   // ---- PERFIL ----
   if (segments[0] === 'perfil') {
     if (method === 'GET') return handleGetPerfil(env, usuario);
     if (method === 'PUT') return handleActualizarPerfil(request, env, usuario);
+  }
+
+  // ---- COMBUSTIBLE ----
+  if (segments[0] === 'combustible') {
+    if (!segments[1]) {
+      if (method === 'GET') return handleGetCombustible(env, url, usuario);
+      if (method === 'POST') return handleCrearCombustible(request, env, usuario);
+    } else {
+      if (method === 'GET') return handleGetCombustibleById(env, segments[1]);
+    }
+  }
+
+  // ---- INCIDENTES ----
+  if (segments[0] === 'incidentes') {
+    if (!segments[1]) {
+      if (method === 'GET') return handleGetIncidentes(env, url, usuario);
+      if (method === 'POST') return handleCrearIncidente(request, env, usuario);
+    } else {
+      if (method === 'PUT') return handleActualizarIncidente(request, env, segments[1], usuario);
+    }
+  }
+
+  // ---- COMPARENDOS ----
+  if (segments[0] === 'comparendos') {
+    if (!segments[1]) {
+      if (method === 'GET') return handleGetComparendos(env, url, usuario);
+      if (method === 'POST') return handleCrearComparendo(request, env, usuario);
+    } else {
+      if (method === 'PUT') return handleActualizarComparendo(request, env, segments[1], usuario);
+    }
   }
 
   return respuestaError('Ruta no encontrada', 404);
@@ -817,7 +857,7 @@ async function analizarDanosConIA(env, fotosSalida, fotosLlegada) {
     Analiza si hay diferencias significativas que indiquen daños nuevos.
     Responde en JSON: {"danos_detectados": boolean, "descripcion_breve": string, "detalles": string, "confianza": number}`;
 
-    const response = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
+    const response = await env.AI.run('@cf/meta/llama-3.8b-instruct', {
       prompt,
       max_tokens: 256,
     });
@@ -859,7 +899,7 @@ async function handleUploadFoto(request, env, usuario) {
 // ============================================================
 
 async function handleGetUsuarios(env) {
-  const result = await env.DB.prepare('SELECT id, nombre, email, rol, telefono, licencia_numero, licencia_vencimiento, activo, created_at FROM usuarios ORDER BY nombre ASC').all();
+  const result = await env.DB.prepare('SELECT id, nombre, email, rol, telefono, licencia_numero, licencia_vencimiento, licencia_categoria, activo, created_at FROM usuarios ORDER BY nombre ASC').all();
   return respuestaOk(result.results || []);
 }
 
@@ -876,10 +916,11 @@ async function handleCrearUsuario(request, env) {
   const passwordHash = await hashPassword(data.password);
 
   await env.DB.prepare(`
-    INSERT INTO usuarios (id, nombre, email, password_hash, rol, telefono, licencia_numero, licencia_vencimiento)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO usuarios (id, nombre, email, password_hash, rol, telefono, licencia_numero, licencia_vencimiento, licencia_categoria)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, data.nombre, data.email.toLowerCase(), passwordHash, data.rol,
-    data.telefono || null, data.licencia_numero || null, data.licencia_vencimiento || null).run();
+    data.telefono || null, data.licencia_numero || null, data.licencia_vencimiento || null,
+    data.licencia_categoria || null).run();
 
   const usuario = await env.DB.prepare('SELECT id, nombre, email, rol, telefono, activo FROM usuarios WHERE id = ?').bind(id).first();
   return respuestaOk(usuario, 201);
@@ -896,10 +937,11 @@ async function handleActualizarUsuario(request, env, id) {
 
   await env.DB.prepare(`
     UPDATE usuarios SET nombre=?, email=?, rol=?, telefono=?, licencia_numero=?,
-    licencia_vencimiento=?, activo=?, updated_at=? WHERE id=?
+    licencia_vencimiento=?, licencia_categoria=?, activo=?, updated_at=? WHERE id=?
   `).bind(
     data.nombre, data.email?.toLowerCase(), data.rol, data.telefono || null,
     data.licencia_numero || null, data.licencia_vencimiento || null,
+    data.licencia_categoria || null,
     data.activo !== undefined ? (data.activo ? 1 : 0) : 1, now, id
   ).run();
 
@@ -914,7 +956,7 @@ async function handleEliminarUsuario(env, id, usuarioActual) {
 }
 
 async function handleGetPerfil(env, usuario) {
-  const perfil = await env.DB.prepare('SELECT id, nombre, email, rol, telefono, licencia_numero, licencia_vencimiento FROM usuarios WHERE id = ?').bind(usuario.id).first();
+  const perfil = await env.DB.prepare('SELECT id, nombre, email, rol, telefono, licencia_numero, licencia_vencimiento, licencia_categoria FROM usuarios WHERE id = ?').bind(usuario.id).first();
   return respuestaOk(perfil);
 }
 
@@ -1031,6 +1073,58 @@ async function generarAlertasAutomaticas(env) {
     }
   }
 
+  // Licencias de instructores por vencer o vencidas
+  const instructores = await env.DB.prepare(`
+    SELECT id, nombre, licencia_numero, licencia_vencimiento, licencia_categoria
+    FROM usuarios WHERE activo = 1 AND licencia_vencimiento IS NOT NULL AND licencia_vencimiento != ''
+  `).all();
+
+  for (const inst of (instructores.results || [])) {
+    const diasRestantes = Math.floor((new Date(inst.licencia_vencimiento) - new Date()) / 86400000);
+    if (diasRestantes <= 60) {
+      const alertaExistente = await env.DB.prepare(
+        `SELECT id FROM alertas WHERE referencia_id = ? AND tipo = 'otro' AND titulo LIKE '%licencia%' AND leida = 0`
+      ).bind(inst.id).first();
+
+      if (!alertaExistente) {
+        const prioridad = diasRestantes < 0 ? 'critica' : diasRestantes <= 15 ? 'alta' : 'normal';
+        const estado = diasRestantes < 0 ? `VENCIDA hace ${Math.abs(diasRestantes)} días` : `vence en ${diasRestantes} días`;
+        await env.DB.prepare(`
+          INSERT INTO alertas (id, tipo, prioridad, referencia_id, referencia_tipo, titulo, mensaje)
+          VALUES (?, 'otro', ?, ?, 'usuario', ?, ?)
+        `).bind(
+          generarId('alt_'), prioridad, inst.id, 'usuario',
+          `${diasRestantes < 0 ? '🚨' : '⚠️'} Licencia de conducción ${diasRestantes < 0 ? 'VENCIDA' : 'por vencer'} - ${inst.nombre}`,
+          `La licencia de conducción del instructor ${inst.nombre} (${inst.licencia_numero || 'sin número'}) ${estado}. Vencimiento: ${inst.licencia_vencimiento}.`
+        ).run();
+      }
+    }
+  }
+
+  // Comparendos con fecha límite próxima
+  const comparendosPendientes = await env.DB.prepare(`
+    SELECT c.*, v.placa FROM comparendos c JOIN vehiculos v ON c.vehiculo_id = v.id
+    WHERE c.estado = 'pendiente' AND c.fecha_limite_pago IS NOT NULL
+    AND date(c.fecha_limite_pago) BETWEEN date('now') AND date('now', '+10 days')
+  `).all();
+
+  for (const comp of (comparendosPendientes.results || [])) {
+    const diasRestantes = Math.floor((new Date(comp.fecha_limite_pago) - new Date()) / 86400000);
+    const alertaExistente = await env.DB.prepare(
+      `SELECT id FROM alertas WHERE referencia_id = ? AND tipo = 'otro' AND titulo LIKE '%Comparendo%fecha%' AND leida = 0`
+    ).bind(comp.id).first();
+    if (!alertaExistente) {
+      await env.DB.prepare(`
+        INSERT INTO alertas (id, tipo, prioridad, vehiculo_id, referencia_id, referencia_tipo, titulo, mensaje)
+        VALUES (?, 'otro', 'alta', ?, ?, 'comparendo', ?, ?)
+      `).bind(
+        generarId('alt_'), comp.vehiculo_id, comp.id,
+        `🚦 Comparendo - fecha límite en ${diasRestantes} días - ${comp.placa}`,
+        `El comparendo del vehículo ${comp.placa} vence el ${comp.fecha_limite_pago}. Valor pendiente: $${Number(comp.valor).toLocaleString()}.`
+      ).run();
+    }
+  }
+
   // Documentos vencidos
   const docsVencidos = await env.DB.prepare(`
     SELECT d.*, v.placa FROM documentos d JOIN vehiculos v ON d.vehiculo_id = v.id
@@ -1054,6 +1148,397 @@ async function generarAlertasAutomaticas(env) {
       ).run();
     }
   }
+}
+
+// ============================================================
+// HANDLERS - COMBUSTIBLE
+// ============================================================
+
+// ============================================================
+// REPORTE CONSOLIDADO DE GASTOS (CONTABILIDAD)
+// ============================================================
+async function handleReporteGastos(env, url, usuario) {
+  soloRoles(usuario, ['director', 'administrador']);
+
+  const params = url.searchParams;
+  const desde   = params.get('desde') || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const hasta   = params.get('hasta') || new Date().toISOString().split('T')[0];
+  const cat     = params.get('categoria') || 'todos'; // todos | combustible | mantenimiento | comparendo | incidente
+  const vehId   = params.get('vehiculo_id') || null;
+  const vehFilter = vehId ? ' AND t.vehiculo_id = ?' : '';
+
+  const filas = [];
+
+  // ── COMBUSTIBLE ──
+  if (cat === 'todos' || cat === 'combustible') {
+    const sql = `SELECT 'combustible' AS categoria, c.id, c.fecha,
+        c.vehiculo_id, v.placa, v.marca || ' ' || v.modelo AS vehiculo,
+        u.nombre AS responsable,
+        c.valor_total AS monto,
+        CAST(c.litros AS TEXT) || ' L' || COALESCE(' — ' || c.estacion, '') AS descripcion,
+        CASE WHEN c.foto_factura IS NOT NULL THEN 1 ELSE 0 END AS tiene_soporte,
+        c.foto_factura AS soporte_url
+      FROM combustible c
+      LEFT JOIN vehiculos v ON c.vehiculo_id = v.id
+      LEFT JOIN usuarios u ON c.instructor_id = u.id
+      WHERE c.fecha BETWEEN ? AND ?${vehFilter}
+      ORDER BY c.fecha DESC`;
+    const args = vehId ? [desde, hasta, vehId] : [desde, hasta];
+    const r = await env.DB.prepare(sql).bind(...args).all();
+    if (r.results) filas.push(...r.results);
+  }
+
+  // ── MANTENIMIENTOS COMPLETADOS CON COSTO ──
+  if (cat === 'todos' || cat === 'mantenimiento') {
+    const sql = `SELECT 'mantenimiento' AS categoria, m.id,
+        COALESCE(m.fecha_realizado, m.proxima_fecha) AS fecha,
+        m.vehiculo_id, v.placa, v.marca || ' ' || v.modelo AS vehiculo,
+        u.nombre AS responsable,
+        m.costo AS monto,
+        m.nombre || COALESCE(' — ' || m.taller, '') AS descripcion,
+        CASE WHEN m.archivo_url IS NOT NULL THEN 1 ELSE 0 END AS tiene_soporte,
+        m.archivo_url AS soporte_url
+      FROM mantenimientos m
+      LEFT JOIN vehiculos v ON m.vehiculo_id = v.id
+      LEFT JOIN usuarios u ON m.realizado_por = u.id
+      WHERE m.estado = 'completado' AND m.costo IS NOT NULL AND m.costo > 0
+        AND COALESCE(m.fecha_realizado, m.proxima_fecha) BETWEEN ? AND ?${vehId ? ' AND m.vehiculo_id = ?' : ''}
+      ORDER BY fecha DESC`;
+    const args = vehId ? [desde, hasta, vehId] : [desde, hasta];
+    const r = await env.DB.prepare(sql).bind(...args).all();
+    if (r.results) filas.push(...r.results);
+  }
+
+  // ── COMPARENDOS ──
+  if (cat === 'todos' || cat === 'comparendo') {
+    const sql = `SELECT 'comparendo' AS categoria, c.id, c.fecha_infraccion AS fecha,
+        c.vehiculo_id, v.placa, v.marca || ' ' || v.modelo AS vehiculo,
+        u.nombre AS responsable,
+        c.valor AS monto,
+        c.tipo_infraccion || COALESCE(' #' || c.numero_comparendo, '') AS descripcion,
+        0 AS tiene_soporte, NULL AS soporte_url
+      FROM comparendos c
+      LEFT JOIN vehiculos v ON c.vehiculo_id = v.id
+      LEFT JOIN usuarios u ON c.instructor_id = u.id
+      WHERE c.fecha_infraccion BETWEEN ? AND ?${vehId ? ' AND c.vehiculo_id = ?' : ''}
+      ORDER BY fecha DESC`;
+    const args = vehId ? [desde, hasta, vehId] : [desde, hasta];
+    const r = await env.DB.prepare(sql).bind(...args).all();
+    if (r.results) filas.push(...r.results);
+  }
+
+  // ── INCIDENTES CON COSTO ESTIMADO ──
+  if (cat === 'todos' || cat === 'incidente') {
+    const sql = `SELECT 'incidente' AS categoria, i.id, i.fecha,
+        i.vehiculo_id, v.placa, v.marca || ' ' || v.modelo AS vehiculo,
+        u.nombre AS responsable,
+        i.costo_estimado AS monto,
+        i.tipo || ': ' || SUBSTR(i.descripcion, 1, 80) AS descripcion,
+        0 AS tiene_soporte, NULL AS soporte_url
+      FROM incidentes i
+      LEFT JOIN vehiculos v ON i.vehiculo_id = v.id
+      LEFT JOIN usuarios u ON i.instructor_id = u.id
+      WHERE i.estado != 'archivado' AND i.costo_estimado IS NOT NULL AND i.costo_estimado > 0
+        AND i.fecha BETWEEN ? AND ?${vehId ? ' AND i.vehiculo_id = ?' : ''}
+      ORDER BY fecha DESC`;
+    const args = vehId ? [desde, hasta, vehId] : [desde, hasta];
+    const r = await env.DB.prepare(sql).bind(...args).all();
+    if (r.results) filas.push(...r.results);
+  }
+
+  // Ordenar todo por fecha descendente
+  filas.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+  // Totales por categoría
+  const totales = { combustible: 0, mantenimiento: 0, comparendo: 0, incidente: 0, total: 0 };
+  for (const f of filas) {
+    const m = f.monto || 0;
+    totales[f.categoria] = (totales[f.categoria] || 0) + m;
+    totales.total += m;
+  }
+
+  return respuestaOk({ filas, totales, desde, hasta, count: filas.length });
+}
+
+// ============================================================
+// EMAIL STUB — NOTIFICACIÓN A CONTABILIDAD
+// Se activa agregando RESEND_API_KEY y CONTABILIDAD_EMAIL en wrangler.toml
+// ============================================================
+async function enviarEmailContabilidad(env, asunto, html, texto) {
+  if (!env.RESEND_API_KEY || !env.CONTABILIDAD_EMAIL) return; // desactivado hasta configurar
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: `Control Vehículos CEA <notificaciones@${env.EMAIL_DOMINIO || 'hermanoslozano.com'}>`,
+        to: [env.CONTABILIDAD_EMAIL],
+        subject: asunto,
+        html,
+        text: texto,
+      }),
+    });
+  } catch (e) { /* silencioso — no bloquea el flujo principal */ }
+}
+
+async function handleGetCombustible(env, url, usuario) {
+  const vehiculoId = url.searchParams.get('vehiculo_id');
+  const instructorId = url.searchParams.get('instructor_id');
+  const desde = url.searchParams.get('desde');
+  const hasta = url.searchParams.get('hasta');
+  const limit = parseInt(url.searchParams.get('limit') || '50');
+
+  let query = `
+    SELECT c.*, v.placa, v.marca, v.modelo, u.nombre as instructor_nombre
+    FROM combustible c
+    JOIN vehiculos v ON c.vehiculo_id = v.id
+    JOIN usuarios u ON c.instructor_id = u.id
+    WHERE 1=1
+  `;
+  const bindings = [];
+
+  if (usuario.rol === 'instructor') {
+    query += ' AND c.instructor_id = ?'; bindings.push(usuario.id);
+  } else if (instructorId) {
+    query += ' AND c.instructor_id = ?'; bindings.push(instructorId);
+  }
+  if (vehiculoId) { query += ' ANC c.vehiculo_id = ?'; bindings.push(vehiculoId); }
+  if (desde) { query += ' AND c.fecha >= ?'; bindings.push(desde); }
+  if (hasta) { query += ' AND c.fecha <= ?'; bindings.push(hasta); }
+  query += ' ORDER BY c.fecha DESC, c.created_at DESC LIMIT ?';
+  bindings.push(limit);
+
+  const result = await env.DB.prepare(query).bind(...bindings).all();
+  return respuestaOk(result.results || []);
+}
+
+async function handleGetCombustibleById(env, id) {
+  const registro = await env.DB.prepare(`
+    SELECT c.*, v.placa, v.marca, v.modelo, u.nombre as instructor_nombre
+    FROM combustible c
+    JOIN vehiculos v ON c.vehiculo_id = v.id
+    JOIN usuarios u ON c.instructor_id = u.id
+    WHERE c.id = ?
+  `).bind(id).first();
+  if (!registro) return respuestaError('Registro no encontrado', 404);
+  return respuestaOk(registro);
+}
+
+async function handleCrearCombustible(request, env, usuario) {
+  const data = await request.json();
+  if (!data.vehiculo_id || !data.fecha || !data.litros || !data.valor_total) {
+    return respuestaError('Campos requeridos: vehiculo_id, fecha, litros, valor_total');
+  }
+
+  const id = generarId('comb_');
+  const precioPorLitro = data.litros > 0 ? (data.valor_total / data.litros) : null;
+
+  await env.DB.prepare(`
+    INSERT INTO combustible (id, vehiculo_id, instructor_id, fecha, km_al_tanquear,
+      litros, valor_total, precio_por_litro, estacion, ciudad, foto_factura, notas)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id, data.vehiculo_id, usuario.id, data.fecha,
+    data.km_al_tanquear || null, data.litros, data.valor_total,
+    precioPorLitro, data.estacion || null, data.ciudad || null,
+    data.foto_factura || null, data.notas || null
+  ).run();
+
+  // Actualizar kilometraje del vehículo si se reportó
+  if (data.km_al_tanquear) {
+    await env.DB.prepare('UPDATE vehiculos SET kilometraje_actual = MAX(kilometraje_actual, ?) WHERE id = ?')
+      .bind(data.km_al_tanquear, data.vehiculo_id).run();
+  }
+
+  const registro = await env.DB.prepare('SELECT * FROM combustible WHERE id = ?').bind(id).first();
+
+  // Notificación a contabilidad (activa solo cuando RESEND_API_KEY y CONTABILIDAD_EMAIL estén configurados)
+  const veh = await env.DB.prepare('SELECT placa, marca, modelo FROM vehiculos WHERE id = ?').bind(data.vehiculo_id).first();
+  const placaVeh = veh ? `${veh.placa} ${veh.marca} ${veh.modelo}` : data.vehiculo_id;
+  await enviarEmailContabilidad(env,
+    `⛽ Nueva factura de combustible — ${placaVeh}`,
+    `<h2>Nueva carga de combustible registrada</h2>
+     <table style="font-family:sans-serif;border-collapse:collapse;">
+       <tr><td style="padding:6px 12px;color:#666">Vehículo</td><td style="padding:6px 12px"><b>${placaVeh}</b></td></tr>
+       <tr><td style="padding:6px 12px;color:#666">Fecha</td><td style="padding:6px 12px">${data.fecha}</td></tr>
+       <tr><td style="padding:6px 12px;color:#666">Litros</td><td style="padding:6px 12px">${data.litros} L</td></tr>
+       <tr><td style="padding:6px 12px;color:#666">Valor total</td><td style="padding:6px 12px"><b>$${Number(data.valor_total).toLocaleString('es-CO')}</b></td></tr>
+       <tr><td style="padding:6px 12px;color:#666">$/Litro</td><td style="padding:6px 12px">$${precioPorLitro ? Math.round(precioPorLitro).toLocaleString('es-CO') : '—'}</td></tr>
+       <tr><td style="padding:6px 12px;color:#666">Estación</td><td style="padding:6px 12px">${data.estacion || '—'}</td></tr>
+       <tr><td style="padding:6px 12px;color:#666">Registrado por</td><td style="padding:6px 12px">${usuario.nombre}</td></tr>
+     </table>
+     ${data.foto_factura ? `<p style="margin-top:16px"><b>Factura adjunta:</b> la foto quedó registrada en la plataforma.</p>` : ''}`,
+    `Nueva carga de combustible — ${placaVeh} — ${data.fecha} — ${data.litros}L — $${data.valor_total}`
+  );
+
+  return respuestaOk(registro, 201);
+}
+
+// ============================================================
+// HANDLERS - INCIDENTES
+// ============================================================
+
+async function handleGetIncidentes(env, url, usuario) {
+  const vehiculoId = url.searchParams.get('vehiculo_id');
+  const estado = url.searchParams.get('estado');
+  const tipo = url.searchParams.get('tipo');
+  const limit = parseInt(url.searchParams.get('limit') || '50');
+
+  let query = `
+    SELECT i.*, v.placa, v.marca, v.modelo, u.nombre as instructor_nombre
+    FROM incidentes i
+    JOIN vehiculos v ON i.vehiculo_id = v.id
+    JOIN usuarios u ON i.instructor_id = u.id
+    WHERE 1=1
+  `;
+  const bindings = [];
+
+  if (usuario.rol === 'instructor') {
+    query += ' AND i.instructor_id = ?'; bindings.push(usuario.id);
+  }
+  if (vehiculoId) { query += ' AND i.vehiculo_id = ?'; bindings.push(vehiculoId); }
+  if (estado) { query += ' AND i.estado = ?'; bindings.push(estado); }
+  if (tipo) { query += ' AND i.tipo = ?'; bindings.push(tipo); }
+  query += ' ORDER BY i.fecha DESC, i.created_at DESC LIMIT ?';
+  bindings.push(limit);
+
+  const result = await env.DB.prepare(query).bind(...bindings).all();
+  return respuestaOk(result.results || []);
+}
+
+async function handleCrearIncidente(request, env, usuario) {
+  const data = await request.json();
+  if (!data.vehiculo_id || !data.fecha || !data.descripcion || !data.tipo) {
+    return respuestaError('Campos requeridos: vehiculo_id, fecha, descripcion, tipo');
+  }
+
+  const id = generarId('inc_');
+  await env.DB.prepare(`
+    INSERT INTO incidentes (id, vehiculo_id, instructor_id, fecha, hora, lugar,
+      descripcion, tipo, fotos, costo_estimado, reclamacion_seguro, numero_poliza,
+      estado, notas)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id, data.vehiculo_id, usuario.id, data.fecha, data.hora || null,
+    data.lugar || null, data.descripcion, data.tipo,
+    JSON.stringify(data.fotos || []),
+    data.costo_estimado || null, data.reclamacion_seguro ? 1 : 0,
+    data.numero_poliza || null, data.estado || 'reportado', data.notas || null
+  ).run();
+
+  // Crear alerta de incidente
+  const vehiculo = await env.DB.prepare('SELECT placa, marca, modelo FROM vehiculos WHERE id = ?').bind(data.vehiculo_id).first();
+  if (vehiculo) {
+    await env.DB.prepare(`
+      INSERT INTO alertas (id, tipo, prioridad, vehiculo_id, referencia_id, referencia_tipo, titulo, mensaje)
+      VALUES (?, 'dano_detectado', 'alta', ?, ?, 'incidente', ?, ?)
+    `).bind(
+      generarId('alt_'), data.vehiculo_id, id,
+      `⚠️ Incidente reportado - ${vehiculo.placa}`,
+      `Incidente tipo "${data.tipo}" reportado el ${data.fecha} en ${vehiculo.placa} (${vehiculo.marca} ${vehiculo.modelo}). ${data.descripcion.substring(0, 100)}`
+    ).run();
+  }
+
+  const incidente = await env.DB.prepare('SELECT * FROM incidentes WHERE id = ?').bind(id).first();
+  return respuestaOk(incidente, 201);
+}
+
+async function handleActualizarIncidente(request, env, id, usuario) {
+  const data = await request.json();
+  if (!soloRoles(['director', 'administrador'])(usuario)) return respuestaError('Sin permisos para actualizar incidentes', 403);
+  const now = new Date().toISOString();
+
+  await env.DB.prepare(`
+    UPDATE incidentes SET estado=?, costo_estimado=?, reclamacion_seguro=?,
+    numero_poliza=?, notas=?, updated_at=? WHERE id=?
+  `).bind(
+    data.estado || 'reportado', data.costo_estimado || null,
+    data.reclamacion_seguro ? 1 : 0, data.numero_poliza || null,
+    data.notas || null, now, id
+  ).run();
+
+  const incidente = await env.DB.prepare('SELECT * FROM incidentes WHERE id = ?').bind(id).first();
+  return respuestaOk(incidente);
+}
+
+// ============================================================
+// HANDLERS - COMPARENDOS
+// ============================================================
+
+async function handleGetComparendos(env, url, usuario) {
+  const vehiculoId = url.searchParams.get('vehiculo_id');
+  const estado = url.searchParams.get('estado');
+  const limit = parseInt(url.searchParams.get('limit') || '50');
+
+  let query = `
+    SELECT c.*, v.placa, v.marca, v.modelo,
+           u.nombre as instructor_nombre
+    FROM comparendos c
+    JOIN vehiculos v ON c.vehiculo_id = v.id
+    LEFT JOIN usuarios u ON c.instructor_id = u.id
+    WHERE 1=1
+  `;
+  const bindings = [];
+
+  if (vehiculoId) { query += ' AND c.vehiculo_id = ?'; bindings.push(vehiculoId); }
+  if (estado) { query += ' AND c.estado = ?'; bindings.push(estado); }
+  query += ' ORDER BY c.fecha_infraccion DESC LIMIT ?';
+  bindings.push(limit);
+
+  const result = await env.DB.prepare(query).bind(...bindings).all();
+  return respuestaOk(result.results || []);
+}
+
+async function handleCrearComparendo(request, env, usuario) {
+  if (!soloRoles(['director', 'administrador'])(usuario)) return respuestaError('Sin permisos para registrar comparendos', 403);
+  const data = await request.json();
+  if (!data.vehiculo_id || !data.placa || !data.fecha_infraccion || !data.tipo_infraccion || !data.valor) {
+    return respuestaError('Campos requeridos: vehiculo_id, placa, fecha_infraccion, tipo_infraccion, valor');
+  }
+
+  const id = generarId('comp_');
+  await env.DB.prepare(`
+    INSERT INTO comparendos (id, vehiculo_id, placa, numero_comparendo, fecha_infraccion,
+      tipo_infraccion, descripcion, valor, descuento_pronto_pago, fecha_limite_pago,
+      estado, fuente, instructor_id, notas)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id, data.vehiculo_id, data.placa.toUpperCase(), data.numero_comparendo || null,
+    data.fecha_infraccion, data.tipo_infraccion, data.descripcion || null,
+    data.valor, data.descuento_pronto_pago || null, data.fecha_limite_pago || null,
+    data.estado || 'pendiente', data.fuente || 'manual', data.instructor_id || null,
+    data.notas || null
+  ).run();
+
+  // Alerta de comparendo
+  await env.DB.prepare(`
+    INSERT INTO alertas (id, tipo, prioridad, vehiculo_id, referencia_id, referencia_tipo, titulo, mensaje)
+    VALUES (?, 'otro', 'alta', ?, ?, 'comparendo', ?, ?)
+  `).bind(
+    generarId('alt_'), data.vehiculo_id, id,
+    `🚦 Comparendo registrado - ${data.placa}`,
+    `Comparendo por "${data.tipo_infraccion}" del ${data.fecha_infraccion}. Valor: $${Number(data.valor).toLocaleString()}. ${data.fecha_limite_pago ? 'Fecha límite: ' + data.fecha_limite_pago : ''}`
+  ).run();
+
+  const comparendo = await env.DB.prepare('SELECT * FROM comparendos WHERE id = ?').bind(id).first();
+  return respuestaOk(comparendo, 201);
+}
+
+async function handleActualizarComparendo(request, env, id, usuario) {
+  if (!soloRoles(['director', 'administrador'])(usuario)) return respuestaError('Sin permisos', 403);
+  const data = await request.json();
+  const now = new Date().toISOString();
+
+  await env.DB.prepare(`
+    UPDATE comparendos SET estado=?, valor=?, descuento_pronto_pago=?,
+    fecha_limite_pago=?, notas=?, updated_at=? WHERE id=?
+  `).bind(
+    data.estado || 'pendiente', data.valor, data.descuento_pronto_pago || null,
+    data.fecha_limite_pago || null, data.notas || null, now, id
+  ).run();
+
+  const comparendo = await env.DB.prepare('SELECT * FROM comparendos WHERE id = ?').bind(id).first();
+  return respuestaOk(comparendo);
 }
 
 async function verificarYCrearAlertaDocumento(env, docId, data) {

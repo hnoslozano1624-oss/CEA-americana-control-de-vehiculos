@@ -212,3 +212,4 @@ npm run dev
 
 *Sistema desarrollado para Escuela Americana de Conducción.*
 *Tecnología: Cloudflare Pages · Workers · D1 · R2 · Workers AI*
+
